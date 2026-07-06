@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Administrace kalendáře – Padel Klatovy</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <img src="assets/logo.png" alt="Padel Klatovy" class="brand-logo" />
+      <span class="brand-mark">PADEL<span class="brand-mark-accent">KLATOVY</span></span>
+    </div>
+    <a class="admin-link" href="index.html" title="Zpět na kalendář">← Kalendář</a>
+  </div>
+  <div class="court-line" aria-hidden="true"></div>
+</header>
+
+<main class="admin-main">
+
+  <section id="loginScreen" class="login-screen">
+    <h1 class="admin-title">Administrace kalendáře</h1>
+    <p class="hero-sub">Zadej heslo pro správu klubových akcí.</p>
+    <form id="loginForm" class="login-form">
+      <input type="password" id="passwordInput" placeholder="Heslo" autocomplete="current-password" required />
+      <button type="submit" class="btn btn-primary">Vstoupit</button>
+    </form>
+    <p class="error-text" id="loginError" hidden>Nesprávné heslo, zkus to znovu.</p>
+  </section>
+
+  <section id="dashboard" class="dashboard" hidden>
+    <div class="dashboard-header">
+      <h1 class="admin-title">Správa akcí</h1>
+      <button class="btn btn-secondary" id="logoutBtn">Odhlásit</button>
+    </div>
+
+    <p class="demo-note" id="adminDemoNote" hidden>
+      ⚡ Demo režim: změny se ukládají jen v tomto prohlížeči (localStorage). Pro sdílenou databázi nastav Supabase v <code>config.js</code>.
+    </p>
+
+    <button class="btn btn-primary btn-block" id="addEventBtn">+ Přidat akci</button>
+
+    <div class="admin-list" id="adminList"></div>
+  </section>
+
+</main>
+
+<div class="modal-overlay" id="formOverlay" hidden>
+  <div class="modal-sheet form-sheet" id="formSheet" role="dialog" aria-modal="true" aria-labelledby="formTitle"></div>
+</div>
+
+<datalist id="tagSuggestions">
+  <option value="zdarma"></option>
+  <option value="pro členy"></option>
+  <option value="veřejné"></option>
+  <option value="začátečníci"></option>
+  <option value="pokročilí"></option>
+  <option value="ženy"></option>
+  <option value="registrace nutná"></option>
+  <option value="kapacita omezená"></option>
+  <option value="grilování"></option>
+  <option value="občerstvení"></option>
+  <option value="LED obrazovka"></option>
+  <option value="CUPRA"></option>
+  <option value="Red Bull"></option>
+</datalist>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="sample-data.js"></script>
+<script src="data-service.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

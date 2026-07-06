@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Padel Klatovy — Co se děje v klubu</title>
+<meta name="description" content="Klubový kalendář Padel Klatovy: turnaje, komunitní akce, tréninky, přednášky a vše, co se děje v klubu." />
+<meta name="theme-color" content="#0a0d0b" />
+<link rel="icon" href="assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <img src="assets/logo.png" alt="Padel Klatovy" class="brand-logo" />
+      <span class="brand-mark">PADEL<span class="brand-mark-accent">KLATOVY</span></span>
+    </div>
+    <a class="admin-link" href="admin.html" title="Administrace">⚙</a>
+  </div>
+  <div class="court-line" aria-hidden="true"></div>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Co se děje v klubu</h1>
+    <p class="hero-sub">Turnaje, tréninky, přednášky a komunitní akce Padel Klatovy — na jednom místě.</p>
+  </section>
+
+  <div class="search-row">
+    <span class="search-icon" aria-hidden="true">🔍</span>
+    <input type="search" id="searchInput" placeholder="Hledat akci…" aria-label="Hledat akci" />
+  </div>
+
+  <nav class="filters" id="filters" aria-label="Filtrovat akce podle typu"></nav>
+
+  <section class="events-list" id="eventsList" aria-live="polite">
+    <p class="loading-state" id="loadingState">Načítám akce…</p>
+  </section>
+
+  <p class="empty-state" id="emptyState" hidden>Nic jsme nenašli. Zkus jiný filtr nebo jiné hledání.</p>
+
+  <section class="past-section" id="pastSection" hidden>
+    <button class="past-toggle" id="pastToggle">
+      <span>Proběhlé akce</span>
+      <span class="past-toggle-arrow">▾</span>
+    </button>
+    <div class="events-list past-list" id="pastList" hidden></div>
+  </section>
+
+  <p class="demo-note" id="demoNote" hidden>
+    ⚡ Aplikace běží v demo režimu s ukázkovými daty. Připojení na Supabase nastavíš v <code>config.js</code>.
+  </p>
+
+  <nav class="quick-links" id="quickLinks" aria-label="Další klubové aplikace"></nav>
+</main>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal-sheet" id="modalSheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div>
+</div>
+
+<footer class="site-footer">
+  <p>Padel Klatovy · Kalendář nenahrazuje rezervace kurtů přes Paysy</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="sample-data.js"></script>
+<script src="data-service.js"></script>
+<script src="openmatch-service.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

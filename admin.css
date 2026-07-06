@@ -1,0 +1,142 @@
+/* Admin-specific additions on top of style.css */
+
+.admin-main { max-width: 640px; margin: 0 auto; padding: 28px 20px 60px; }
+
+.admin-title { font-family: var(--font-display); font-size: 32px; letter-spacing: 0.01em; }
+
+/* --- Login --- */
+
+.login-screen { padding-top: 16px; }
+
+.login-form { display: flex; gap: 10px; margin-top: 20px; }
+
+.login-form input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 14px;
+}
+.login-form input:focus { border-color: var(--green); outline: none; }
+
+.error-text { color: var(--red); font-size: 13px; margin-top: 10px; }
+
+/* --- Dashboard --- */
+
+.dashboard-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+
+.btn-block { width: 100%; margin: 4px 0 22px; }
+
+.admin-list { display: flex; flex-direction: column; gap: 12px; }
+
+.admin-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 14px 16px;
+}
+
+.admin-row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+
+.admin-row-title { font-size: 15px; font-weight: 800; }
+
+.admin-row-meta {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 4px 0 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: var(--radius-chip);
+  white-space: nowrap;
+}
+
+.badge-visible { color: var(--green); background: var(--green-tint); }
+.badge-hidden { color: var(--text-faint); background: var(--surface-2); border: 1px solid var(--border-strong); }
+
+.admin-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.btn-mini {
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.btn-mini:hover { color: var(--text); border-color: var(--green); }
+.btn-mini.danger:hover { color: var(--red); border-color: var(--red); }
+
+/* --- Form --- */
+
+.form-sheet { max-width: 560px; }
+
+.form-title { font-size: 20px; font-weight: 800; margin: 20px 22px 4px; padding-right: 30px; }
+.form-subtitle { font-size: 12.5px; color: var(--text-faint); margin: 0 22px 16px; }
+
+.form-scroll { padding: 0 22px 26px; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.form-field.full { grid-column: 1 / -1; }
+
+.form-field label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+
+.form-hint { font-size: 11px; color: var(--text-faint); font-weight: 400; text-transform: none; letter-spacing: normal; }
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  padding: 9px 11px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+}
+.form-field textarea { resize: vertical; min-height: 60px; }
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus { outline: none; border-color: var(--green); }
+
+.form-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+.form-checkbox input { width: 16px; height: 16px; }
+
+.form-section-label {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--green);
+  margin: 8px 0 -2px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+.form-actions { display: flex; gap: 10px; margin-top: 6px; position: sticky; bottom: 0; background: var(--surface); padding-top: 10px; }
+
+.form-error { color: var(--red); font-size: 12.5px; margin: -4px 22px 10px; }
+
+@media (max-width: 420px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
