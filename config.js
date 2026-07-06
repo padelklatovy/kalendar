@@ -22,8 +22,8 @@ window.APP_CONFIG = {
   // + localStorage). Klidně použij stejný Supabase projekt jako
   // u Hubu / BAR appky (zlgqsndoreimophthvpw) — tabulka "events" si
   // s ostatními tabulkami nekoliduje, viz schema.sql.
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://ppntayyhksqgsxmemvaj.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_lFkYMLqXgmRGx0T5c-T9wg_h9V_BeKa",
 
   // --- Živé propojení na "Chybí nám hráč" (Open Match) ---
   // Toto je JIŽ ŽIVÝ, samostatný projekt (github.com/padelklatovy/chybi-nam-hrac).
