@@ -24,6 +24,108 @@
   const SESSION_KEY = "padelAdminAuthed";
   let events = [];
 
+  // ---------- PROPOJENÍ NA REZERVACE (CORE app, tabulka reservations/venues/courts) ----------
+  let coreClient = null;
+  let venuesData = []; // [{id, name, club_id, courts:[{id,name}]}]
+  let CORE_CLUB_ID = null;
+
+  async function initCoreLink() {
+    const cfg = window.APP_CONFIG || {};
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY || !window.supabase) return;
+    try {
+      coreClient = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+      const { data: clubs } = await coreClient.from("clubs").select("id").limit(1);
+      CORE_CLUB_ID = clubs && clubs[0] ? clubs[0].id : null;
+      const { data: venues, error } = await coreClient.from("venues").select("id, name, courts(id, name)").order("name");
+      if (error) { console.error("Nepodařilo se načíst hřiště/kurty z Rezervací:", error); return; }
+      venuesData = venues || [];
+    } catch (err) {
+      console.error("Napojení na Rezervace se nepovedlo:", err);
+    }
+  }
+
+  function timeToDecimal(t) {
+    if (!t) return null;
+    const [h, m] = t.split(":").map(Number);
+    return h + (m || 0) / 60;
+  }
+
+  async function findLinkedReservation(eventId) {
+    if (!coreClient || !eventId) return null;
+    const { data, error } = await coreClient.from("reservations").select("*").eq("source_event_id", eventId)
+      .not("status", "in", "(cancelled_by_user,cancelled_by_admin)").maybeSingle();
+    if (error) { console.error(error); return null; }
+    return data;
+  }
+
+  async function syncCourtBlock(eventRow, formEl) {
+    const shouldBlock = formEl.querySelector('[name="block_court"]').checked;
+    const venueId = formEl.querySelector('[name="block_venue"]').value;
+    const courtId = formEl.querySelector('[name="block_court_id"]').value;
+    const existing = await findLinkedReservation(eventRow.id);
+
+    if (!shouldBlock) {
+      if (existing) {
+        await coreClient.from("reservations").update({ status: "cancelled_by_admin" }).eq("id", existing.id);
+      }
+      return;
+    }
+    if (!venueId || !courtId) return; // nevybráno, nic nedělej
+
+    const startHour = timeToDecimal(eventRow.time_from);
+    const endHour = timeToDecimal(eventRow.time_to);
+    const payload = {
+      club_id: CORE_CLUB_ID, venue_id: venueId, court_id: courtId,
+      date: eventRow.date, start_hour: startHour, duration_hours: endHour - startHour, end_hour: endHour,
+      type: "club_event", status: "club_blocked", event_name: eventRow.name,
+      source_event_id: eventRow.id, created_by: "kalendar_admin"
+    };
+    if (existing) {
+      await coreClient.from("reservations").update(payload).eq("id", existing.id);
+    } else {
+      await coreClient.from("reservations").insert(payload);
+    }
+  }
+
+  function blockCourtFieldsHTML(pre) {
+    const checked = pre && pre.checked ? "checked" : "";
+    const venueOptions = venuesData.map(v => `<option value="${v.id}" ${pre && pre.venueId === v.id ? "selected" : ""}>${escapeHtml(v.name)}</option>`).join("");
+    return `
+      <div class="form-section-label">Propojení s Rezervacemi kurtů</div>
+      <div class="form-field full">
+        <label class="form-checkbox"><input type="checkbox" name="block_court" id="blockCourtCheck" ${checked}/> Blokovat kurt v appce Rezervace po dobu akce</label>
+      </div>
+      <div class="form-field" id="blockVenueField" style="${checked ? "" : "display:none;"}">
+        <label>Hřiště</label>
+        <select name="block_venue" id="blockVenueSelect"><option value="">— vyber —</option>${venueOptions}</select>
+      </div>
+      <div class="form-field" id="blockCourtField" style="${checked ? "" : "display:none;"}">
+        <label>Kurt</label>
+        <select name="block_court_id" id="blockCourtSelect"><option value="">— nejdřív vyber hřiště —</option></select>
+      </div>`;
+  }
+
+  function wireBlockCourtFields(pre) {
+    const checkEl = document.getElementById("blockCourtCheck");
+    const venueField = document.getElementById("blockVenueField");
+    const courtField = document.getElementById("blockCourtField");
+    const venueSel = document.getElementById("blockVenueSelect");
+    const courtSel = document.getElementById("blockCourtSelect");
+    if (!checkEl) return;
+
+    function fillCourts(venueId, selectedCourtId) {
+      const v = venuesData.find(v => v.id === venueId);
+      const courts = v ? v.courts : [];
+      courtSel.innerHTML = courts.map(c => `<option value="${c.id}" ${selectedCourtId === c.id ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("") || `<option value="">Žádné kurty</option>`;
+    }
+    checkEl.addEventListener("change", () => {
+      venueField.style.display = checkEl.checked ? "" : "none";
+      courtField.style.display = checkEl.checked ? "" : "none";
+    });
+    venueSel.addEventListener("change", () => fillCourts(venueSel.value, null));
+    if (pre && pre.venueId) fillCourts(pre.venueId, pre.courtId);
+  }
+
   const el = {
     loginScreen: document.getElementById("loginScreen"),
     loginForm: document.getElementById("loginForm"),
@@ -177,6 +279,10 @@
         await loadEvents();
       } else if (action === "delete") {
         if (confirm(`Opravdu smazat akci „${ev.name}“? Tuto akci nelze vrátit zpět.`)) {
+          if (coreClient) {
+            const linked = await findLinkedReservation(ev.id);
+            if (linked) await coreClient.from("reservations").update({ status: "cancelled_by_admin" }).eq("id", linked.id);
+          }
           await DataService.deleteEvent(ev.id);
           await loadEvents();
         }
@@ -206,6 +312,7 @@
       price: "", is_free: false, organizer: "", phone: "", whatsapp: "",
       photo_url: "", tags: [], schedule: [], what_to_bring: "",
       status: "otevreno", visibility: "verejne",
+      _block: { checked: false, venueId: null, courtId: null },
     };
     return `
       <button class="modal-close" id="formClose" aria-label="Zavřít">✕</button>
@@ -316,6 +423,8 @@
               <option value="skryte" ${v.visibility === "skryte" ? "selected" : ""}>Skryté</option>
             </select>
           </div>
+
+          ${blockCourtFieldsHTML(v._block)}
         </div>
 
         <div class="form-actions">
@@ -326,11 +435,18 @@
       </div>`;
   }
 
-  function openForm(ev) {
+  async function openForm(ev) {
+    let blockPre = { checked: false, venueId: null, courtId: null };
+    if (ev) {
+      const linked = await findLinkedReservation(ev.id);
+      if (linked) blockPre = { checked: true, venueId: linked.venue_id, courtId: linked.court_id };
+      ev = { ...ev, _block: blockPre };
+    }
     el.formSheet.innerHTML = formHTML(ev);
     el.formSheet.dataset.editingId = ev ? ev.id : "";
     el.formOverlay.hidden = false;
     document.body.style.overflow = "hidden";
+    wireBlockCourtFields(blockPre.checked ? blockPre : null);
   }
 
   function closeForm() {
@@ -382,11 +498,14 @@
 
     const editingId = el.formSheet.dataset.editingId;
     try {
+      let savedEvent;
       if (editingId) {
-        await DataService.updateEvent(editingId, payload);
+        savedEvent = await DataService.updateEvent(editingId, payload);
+        savedEvent = savedEvent || { ...payload, id: editingId };
       } else {
-        await DataService.addEvent(payload);
+        savedEvent = await DataService.addEvent(payload);
       }
+      if (coreClient) await syncCourtBlock(savedEvent, form);
       closeForm();
       await loadEvents();
     } catch (err) {
@@ -402,6 +521,7 @@
   // ---------- INIT ----------
 
   DataService.init();
+  initCoreLink();
   if (sessionStorage.getItem(SESSION_KEY) === "1") {
     showDashboard();
   } else {
