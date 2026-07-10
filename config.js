@@ -25,14 +25,13 @@ window.APP_CONFIG = {
   SUPABASE_URL: "https://ppntayyhksqgsxmemvaj.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_lFkYMLqXgmRGx0T5c-T9wg_h9V_BeKa",
 
-  // --- Živé propojení na "Chybí nám hráč" (Open Match) ---
-  // Toto je JIŽ ŽIVÝ, samostatný projekt (github.com/padelklatovy/chybi-nam-hrac).
-  // Kalendář si odtud jen ČTE otevřené hry (žádný zápis) a kategorii
-  // "Open Match" jimi automaticky naplní. Nic tu neměň, pokud
-  // nezakládáš úplně nový projekt "Chybí nám hráč".
-  CHYBI_NAM_HRAC_SUPABASE_URL: "https://yynkcxanfglptmznkiwx.supabase.co",
-  CHYBI_NAM_HRAC_SUPABASE_ANON_KEY: "sb_publishable_DY2iR5z1GmK_-jb7XVa0hw_Z_6uNYzo",
-  CHYBI_NAM_HRAC_URL: "https://padelklatovy.github.io/chybi-nam-hrac/",
+  // --- Open Match ---
+  // PŮVODNĚ zde bylo živé napojení na samostatnou appku "Chybí nám hráč"
+  // (github.com/padelklatovy/chybi-nam-hrac). Ta appka je od teď ZRUŠENÁ —
+  // kategorie "Open Match" se teď plní z appky Rezervace kurtů (CORE),
+  // která běží nad stejným Supabase projektem jako tenhle Kalendář
+  // (žádné nové přihlašovací údaje netřeba, viz openmatch-service.js).
+  CORE_APP_URL: "https://padelklatovy.github.io/padel-klatovy-core/",
 
   // --- Rychlé odkazy na ostatní klubové appky ---
   BAR_APP_URL: "https://padelklatovy.github.io/padel-klatovy-bar/",

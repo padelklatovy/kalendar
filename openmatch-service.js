@@ -1,68 +1,83 @@
 /**
- * OPEN MATCH SERVICE — most na živá data "Chybí nám hráč"
- * ---------------------------------------------------------
- * Toto je JEN ČTENÍ. Kalendář sem nic nezapisuje a nijak
- * neovlivňuje appku "Chybí nám hráč" — je to jen zrcadlo jejích
- * otevřených her do kategorie "Open Match".
+ * OPEN MATCH SERVICE — most na Open Matches z appky Rezervace kurtů (CORE)
+ * ---------------------------------------------------------------------
+ * PŮVODNĚ tohle četlo ze samostatné appky "Chybí nám hráč" (jiný Supabase
+ * projekt). Ta appka je ZRUŠENÁ. Open Match teď žije v appce Rezervace
+ * kurtů jako plnohodnotná rezervace s vlastní platbou — tenhle soubor
+ * čte tabulky `reservations` + `open_matches` + `open_match_players`
+ * ve STEJNÉM Supabase projektu, který už Kalendář používá (viz config.js,
+ * SUPABASE_URL/SUPABASE_ANON_KEY jsou ty samé, žádné nové přihlašovací
+ * údaje nejsou potřeba).
  *
- * Skutečné "přidat se"/"vytvořit hru" akce vedou zpět do
- * https://padelklatovy.github.io/chybi-nam-hrac/, kde běží
- * originální (jednodušší, bez účtů) mechanismus — nepřepisujeme ho.
+ * Toto je JEN ČTENÍ. Kalendář sem nic nezapisuje.
  *
- * Pokud se načtení nepovede (výpadek sítě, CORS, ...), appka
- * potichu spadne zpět na to, co má v `events` (ať je to prázdno,
- * nebo záložní ručně zadaná akce v admin/sample datech).
+ * Skutečné "přidat se" vede do appky Rezervace kurtů (CORE),
+ * konkrétně na záložku Open Matches (?tab=openmatches).
+ *
+ * Pokud se načtení nepovede (výpadek sítě, ...), appka potichu
+ * spadne zpět na to, co má v `events` (prázdno, nebo ručně zadaný
+ * záznam v adminu).
  */
 const OpenMatchService = (function () {
-  const LEVEL_LABELS = { mix: "Nezáleží", A: "A", B1: "B1", B2: "B2", C1: "C1", C2: "C2", D1: "D1", D2: "D2" };
+  const LEVEL_LABELS = { D2: "D2 — Začátečník", D1: "D1 — Začátečník+", C2: "C2 — Mírně pokročilý", C1: "C1 — Mírně pokročilý+", B2: "B2 — Pokročilý", B1: "B1 — Pokročilý+", A: "A — Závodní" };
 
   function client() {
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.CHYBI_NAM_HRAC_SUPABASE_URL || !cfg.CHYBI_NAM_HRAC_SUPABASE_ANON_KEY || !window.supabase) return null;
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY || !window.supabase) return null;
     try {
-      return window.supabase.createClient(cfg.CHYBI_NAM_HRAC_SUPABASE_URL, cfg.CHYBI_NAM_HRAC_SUPABASE_ANON_KEY);
+      return window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
     } catch (err) {
       console.warn("OpenMatchService: nepodařilo se vytvořit klienta.", err);
       return null;
     }
   }
 
+  function formatHour(h) {
+    if (h === null || h === undefined) return "";
+    const hh = Math.floor(h);
+    const mm = Math.round((h - hh) * 60);
+    return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  }
+
   function mapRowToEvent(row) {
-    const levelLabel = LEVEL_LABELS[row.level] || row.level || "mix";
-    const isFull = row.status === "full" || row.needed === 0;
-    const title = row.type && row.type !== "volná hra" ? row.type : "Otevřený zápas";
+    const om = (row.open_matches && row.open_matches[0]) || null;
+    const joined = om ? (om.open_match_players || []).length : 0;
+    const needed = om ? om.players_needed : 2;
+    const missing = Math.max(needed - joined, 0);
+    const levelLabel = om && LEVEL_LABELS[om.level] ? LEVEL_LABELS[om.level] : (om ? om.level : "");
+    const isFull = missing === 0;
+
+    const venueName = row.venues ? row.venues.name : "";
+    const courtName = row.courts ? row.courts.name : "";
 
     const tags = [];
-    if (levelLabel !== "Nezáleží") tags.push("úroveň " + levelLabel);
-    if (row.type) tags.push(row.type);
-    tags.push("pro členy");
+    if (levelLabel) tags.push(levelLabel);
+    tags.push("pro registrované");
 
     return {
       id: "openmatch-" + row.id,
-      name: title,
+      name: "Otevřený zápas",
       category: "open_match",
       date: row.date,
-      time_from: (row.time || "").slice(0, 5),
-      time_to: "",
-      location: row.court || "Kurt (upřesní se ve hře)",
-      description_short: isFull
-        ? "Sestava je plná."
-        : `Hledáme ještě ${row.needed} ${row.needed === 1 ? "hráče" : "hráčů"}.${row.note ? " " + row.note : ""}`,
-      description_long: row.note || "",
-      capacity: null,
-      signed_up_count: 0,
+      time_from: formatHour(row.start_hour),
+      time_to: formatHour(row.end_hour),
+      location: [venueName, courtName].filter(Boolean).join(" · "),
+      description_short: isFull ? "Sestava je plná." : `Hledáme ještě ${missing} ${missing === 1 ? "hráče" : "hráčů"}.`,
+      description_long: "",
+      capacity: needed,
+      signed_up_count: joined,
       price: 0,
       is_free: true,
-      organizer: row.creator || "Hráč",
-      phone: "",
+      organizer: row.organizer_name || "Hráč",
+      phone: row.organizer_phone || "",
       whatsapp: "",
       photo_url: "",
       tags: tags,
       schedule: [],
       what_to_bring: "Raketu, obuv na padel",
-      status: isFull ? "plno" : row.needed <= 1 ? "posledni_mista" : "otevreno",
+      status: isFull ? "plno" : missing <= 1 ? "posledni_mista" : "otevreno",
       visibility: "verejne",
-      _source: "chybi-nam-hrac",
+      _source: "core-openmatch",
     };
   }
 
@@ -70,16 +85,18 @@ const OpenMatchService = (function () {
     const sb = client();
     if (!sb) return [];
     try {
+      const todayIso = new Date().toISOString().slice(0, 10);
       const { data, error } = await sb
-        .from("matches")
-        .select("*")
-        .neq("status", "closed")
-        .order("date", { ascending: true })
-        .order("time", { ascending: true });
+        .from("reservations")
+        .select("*, venues(name), courts(name), open_matches(*, open_match_players(*))")
+        .eq("is_open_match", true)
+        .eq("status", "paid_confirmed")
+        .gte("date", todayIso)
+        .order("date", { ascending: true });
       if (error) throw error;
       return (data || []).map(mapRowToEvent);
     } catch (err) {
-      console.warn("OpenMatchService: nepodařilo se načíst živé otevřené hry, appka pokračuje bez nich.", err);
+      console.warn("OpenMatchService: nepodařilo se načíst otevřené zápasy z Rezervací, appka pokračuje bez nich.", err);
       return [];
     }
   }

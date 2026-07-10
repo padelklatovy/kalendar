@@ -1,77 +1,1379 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Padel Klatovy — Co se děje v klubu</title>
-<meta name="description" content="Klubový kalendář Padel Klatovy: turnaje, komunitní akce, tréninky, přednášky a vše, co se děje v klubu." />
-<meta name="theme-color" content="#0a0d0b" />
-<link rel="icon" href="assets/logo.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADEL KLATOVY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --red:#FF0000; --red-deep:#C40000; --green:#00534E; --green-soft:#0A7A6E;
+    --ink:#141414; --paper:#FAF8F5; --paper-dim:#EFECE6; --line:#E3DFD6;
+    --amber:#B8790A; --amber-bg:#FCEFD6; --ok-bg:#E4F3EE; --ok-text:#0A5C4C; --danger-bg:#FBE7E5;
+    --font-display:'Archivo Black', sans-serif; --font-head:'Barlow Condensed', sans-serif; --font-body:'Work Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
+  ::selection{background:var(--red);color:#fff;}
+
+  header.app-header{position:sticky;top:0;z-index:50;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:4px solid var(--red);}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-logo-card{background:#fff;border-radius:8px;padding:4px 10px;display:flex;align-items:center;}
+  .brand-logo-img{height:36px;display:block;}
+  .brand-name{font-family:var(--font-head);font-weight:700;font-size:20px;letter-spacing:0.5px;text-transform:uppercase;}
+  .brand-name span{color:var(--red);}
+  .header-right{display:flex;align-items:center;gap:12px;}
+  .profile-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);padding:6px 12px;border-radius:100px;font-size:13px;cursor:pointer;border:1px solid rgba(255,255,255,0.15);position:relative;}
+  .profile-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--green-soft);}
+  .profile-menu{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.25);min-width:160px;display:none;overflow:hidden;z-index:60;}
+  .profile-menu.show{display:block;}
+  .profile-menu button{width:100%;text-align:left;background:none;border:none;padding:10px 14px;font-size:13px;font-family:var(--font-body);color:var(--ink);cursor:pointer;}
+  .profile-menu button:hover{background:var(--paper-dim);}
+  .btn{font-family:var(--font-head);font-weight:600;letter-spacing:0.3px;border:none;border-radius:6px;padding:10px 18px;cursor:pointer;font-size:15px;transition:transform .12s ease;}
+  .btn:active{transform:scale(0.97);}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-primary{background:var(--red);color:#fff;}
+  .btn-primary:hover:not(:disabled){background:var(--red-deep);}
+  .btn-ghost{background:transparent;color:inherit;border:1px solid var(--line);}
+  .btn-ghost:hover{background:var(--paper-dim);}
+  .btn-dark{background:var(--ink);color:#fff;}
+  .btn-sm{padding:6px 12px;font-size:13px;border-radius:5px;}
+  .btn-green{background:var(--green);color:#fff;}
+
+  nav.tabs{display:flex;gap:2px;background:var(--paper-dim);padding:0 20px;overflow-x:auto;border-bottom:1px solid var(--line);}
+  nav.tabs button{font-family:var(--font-head);font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;background:none;border:none;padding:14px 16px;cursor:pointer;color:#6b6b6b;border-bottom:3px solid transparent;white-space:nowrap;}
+  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--red);}
+  nav.tabs button:hover:not(.active){color:var(--ink);}
+
+  main{max-width:1120px;margin:0 auto;padding:28px 20px 80px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  h1.page-title{font-family:var(--font-head);font-size:34px;font-weight:700;text-transform:uppercase;margin:0 0 4px;letter-spacing:0.3px;}
+  .page-sub{color:#767066;margin:0 0 24px;font-size:15px;}
+
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px,1fr));gap:16px;margin-bottom:8px;}
+  .product-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
+  .product-photo{height:120px;background:linear-gradient(135deg, var(--green), var(--green-soft));display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-head);font-size:15px;text-transform:uppercase;letter-spacing:0.5px;}
+  .product-body{padding:16px;display:flex;flex-direction:column;gap:10px;flex:1;}
+  .product-body b{font-family:var(--font-head);font-size:19px;font-weight:600;}
+  .product-body .p-meta{font-size:12px;color:#8a847a;text-transform:uppercase;letter-spacing:0.3px;}
+  .back-link{background:none;border:none;color:var(--green);font-family:var(--font-head);font-weight:600;font-size:14px;cursor:pointer;padding:0;margin-bottom:14px;display:inline-flex;align-items:center;gap:4px;}
+  .back-link:hover{text-decoration:underline;}
+  .active-product-bar{display:flex;align-items:center;justify-content:space-between;background:var(--paper-dim);border-radius:10px;padding:10px 16px;margin-bottom:14px;}
+  .active-product-bar b{font-family:var(--font-head);font-size:16px;}
+
+  .date-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin-bottom:18px;}
+  .date-bar .date-label{font-family:var(--font-head);font-size:20px;font-weight:600;text-transform:capitalize;}
+  .date-nav{display:flex;gap:8px;align-items:center;}
+  .icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  .icon-btn:hover{background:var(--paper-dim);}
+
+  .grid-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff;}
+  .court-grid{width:100%;}
+  .grid-row{display:grid;border-top:1px solid var(--line);}
+  .grid-row:first-child{border-top:none;background:var(--ink);}
+  .grid-row:first-child .cell{color:#fff;font-family:var(--font-head);font-size:10px;text-align:center;padding:8px 0;font-weight:600;}
+  .grid-row:first-child .cell.half{color:#8a847a;}
+  .court-label{padding:14px 10px;font-family:var(--font-head);font-weight:600;font-size:14px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;background:var(--paper);position:sticky;left:0;z-index:2;}
+  .court-label small{font-weight:400;font-size:10px;color:#8a847a;text-transform:uppercase;letter-spacing:0.4px;}
+  .cell{border-right:1px solid var(--line);min-width:0;}
+  .slot{height:44px;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;transition:background .1s ease;overflow:hidden;}
+  .slot:hover{background:#FDECEC;}
+  .slot.free{background:repeating-linear-gradient(135deg, #fff, #fff 6px, #FCFAF7 6px, #FCFAF7 12px);}
+  .slot.mine{background:var(--ok-bg);}
+  .slot.mine .tag{color:var(--ok-text);}
+  .slot.blocked{background:var(--paper-dim);cursor:not-allowed;}
+  .slot.blocked .tag{color:#9a948a;}
+  .slot.openmatch{background:var(--amber-bg);cursor:pointer;}
+  .slot.openmatch:hover{filter:brightness(0.97);}
+  .slot.continuation{border-left:none;}
+  .slot .tag{font-size:9px;font-family:var(--font-head);font-weight:600;text-transform:uppercase;text-align:center;line-height:1.1;padding:0 2px;}
+
+  .legend{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;font-size:13px;color:#5c574e;}
+  .legend .sw{display:inline-flex;align-items:center;gap:6px;}
+  .legend .box{width:14px;height:14px;border-radius:3px;border:1px solid var(--line);}
+
+  .overlay{position:fixed;inset:0;background:rgba(20,20,20,0.55);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:14px;max-width:460px;width:100%;padding:26px;max-height:90vh;overflow-y:auto;}
+  .modal h2{font-family:var(--font-head);font-size:24px;margin:0 0 4px;text-transform:uppercase;font-weight:700;}
+  .modal .modal-sub{color:#767066;font-size:14px;margin:0 0 18px;}
+  .modal-close{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:#999;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#4a453d;}
+  .field input, .field select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:var(--font-body);background:var(--paper);}
+  .field input:focus, .field select:focus{outline:2px solid var(--green-soft);outline-offset:1px;}
+  .checkbox-row{display:flex;align-items:flex-start;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;margin:14px 0;}
+  .checkbox-row input{margin-top:3px;}
+  .checkbox-row .cb-title{font-weight:600;font-size:14px;}
+  .checkbox-row .cb-sub{font-size:12px;color:#767066;margin-top:2px;}
+
+  .duration-box{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+  .duration-box .dlabel{display:flex;justify-content:space-between;font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:8px;}
+  .duration-box input[type=range]{width:100%;accent-color:var(--red);}
+  .duration-box .drange-note{font-size:12px;color:#8a847a;margin-top:4px;}
+
+  .players-box{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px;background:#fff;}
+  .players-box .p-title{font-family:var(--font-head);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;}
+  .player-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;}
+  .player-row input{flex:2;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:var(--font-body);}
+  .player-row select{flex:1;padding:8px 6px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:var(--font-body);}
+  .player-row .rm{background:none;border:none;color:#c40000;cursor:pointer;font-size:16px;padding:2px 6px;}
+  .player-row.fixed{background:var(--paper);border-radius:6px;padding:6px 10px;font-size:13px;}
+  .add-player-btn{background:none;border:1px dashed var(--line);border-radius:6px;padding:8px;width:100%;cursor:pointer;font-size:13px;color:var(--green);font-family:var(--font-head);font-weight:600;}
+  .add-player-btn:hover{background:var(--paper);}
+
+  .price-box{background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:14px 16px;margin:14px 0;}
+  .price-row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;}
+  .price-row.total{font-weight:700;font-size:17px;border-top:1px solid var(--line);margin-top:6px;padding-top:8px;font-family:var(--font-head);}
+  .badge-discount{background:var(--ok-bg);color:var(--ok-text);font-size:11px;padding:2px 8px;border-radius:100px;font-weight:600;}
+
+  .qr-box{text-align:center;padding:10px 0;}
+  .qr-visual{width:180px;height:180px;margin:0 auto 14px;background:#fff;border:1px solid var(--line);display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);gap:2px;padding:10px;}
+  .qr-visual div{background:var(--ink);}
+  .qr-visual div.off{background:#fff;}
+  .qr-meta{font-size:13px;color:#5c574e;line-height:1.6;margin-bottom:16px;}
+  .qr-meta b{color:var(--ink);}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-head);font-weight:600;font-size:13px;padding:6px 14px;border-radius:100px;text-transform:uppercase;letter-spacing:0.3px;}
+  .status-pill.pending{background:var(--amber-bg);color:var(--amber);}
+  .status-pill.paid{background:var(--ok-bg);color:var(--ok-text);}
+  .status-pill.blocked{background:var(--paper-dim);color:#6b6b6b;}
+
+  .card-list{display:flex;flex-direction:column;gap:10px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+  .card .info b{font-family:var(--font-head);font-size:17px;font-weight:600;}
+  .card .info .meta{font-size:13px;color:#767066;margin-top:3px;}
+  .card .actions{display:flex;gap:8px;align-items:center;}
+  .empty-state{text-align:center;padding:50px 20px;color:#948e83;border:1px dashed var(--line);border-radius:12px;}
+  .empty-state .em-title{font-family:var(--font-head);font-size:20px;color:var(--ink);margin-bottom:6px;}
+
+  .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+  .stat-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;}
+  .stat-card .num{font-family:var(--font-display);font-size:30px;color:var(--red);}
+  .stat-card .lbl{font-size:13px;color:#767066;margin-top:4px;text-transform:uppercase;letter-spacing:0.3px;}
+  table.admin-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  table.admin-table th{background:var(--ink);color:#fff;text-align:left;padding:10px 12px;font-family:var(--font-head);font-size:12px;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;}
+  table.admin-table td{padding:10px 12px;border-top:1px solid var(--line);font-size:14px;}
+  .section-title{font-family:var(--font-head);font-size:20px;font-weight:600;text-transform:uppercase;margin:30px 0 12px;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-size:14px;font-family:var(--font-head);letter-spacing:0.3px;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.25);}
+  .toast.show{display:block;animation:fadeUp .25s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translate(-50%,8px);}to{opacity:1;transform:translate(-50%,0);}}
+
+  .banner{background:var(--green);color:#fff;padding:10px 20px;font-size:13px;text-align:center;}
+  .banner b{color:#FFD966;}
+  .banner.warn{background:var(--red-deep);}
+
+  @media(max-width:760px){ main{padding:20px 12px 80px;} .admin-grid{grid-template-columns:1fr;} }
+</style>
 </head>
 <body>
 
-<header class="site-header">
-  <div class="header-inner">
-    <div class="brand">
-      <img src="assets/logo.png" alt="Padel Klatovy" class="brand-logo" />
-      <span class="brand-mark">PADEL<span class="brand-mark-accent">KLATOVY</span></span>
-    </div>
-    <a class="admin-link" href="admin.html" title="Administrace">⚙</a>
-  </div>
-  <div class="court-line" aria-hidden="true"></div>
+<div class="banner warn">🔒 <b>Testovací nasazení</b> — připojeno na skutečný Supabase, ale bez zapnutého Row Level Security. Nesdílej tento odkaz veřejně, dokud nebude RLS hotové.</div>
+
+<header class="app-header">
+  <div class="brand"><div class="brand-logo-card"><img src="logo.png" alt="Padel Klatovy" class="brand-logo-img"></div></div>
+  <div class="header-right" id="headerRight"></div>
 </header>
 
+<nav class="tabs" id="tabs">
+  <button data-view="reservations" class="active">Rezervace</button>
+  <button data-view="mine">Moje rezervace</button>
+  <button data-view="openmatches">Open Matches</button>
+  <button data-view="calendar">Kalendář</button>
+  <button data-view="admin">Admin</button>
+</nav>
+
 <main>
-  <section class="hero">
-    <h1>Co se děje v klubu</h1>
-    <p class="hero-sub">Turnaje, tréninky, přednášky a komunitní akce Padel Klatovy — na jednom místě.</p>
+
+  <section class="view active" id="view-reservations">
+    <h1 class="page-title">Rezervace kurtů</h1>
+    <p class="page-sub" id="reservationsIntro">Vyber si hřiště / lokalitu, kde chceš rezervovat.</p>
+    <div id="productSelector" class="product-grid"></div>
+    <div id="gridWrap" style="display:none;">
+      <div class="active-product-bar">
+        <button class="back-link" onclick="backToProducts()">‹ Změnit hřiště</button>
+        <b id="activeProductLabel"></b>
+      </div>
+      <div class="date-bar">
+        <div class="date-nav"><button class="icon-btn" id="prevDay">‹</button><button class="icon-btn" id="nextDay">›</button></div>
+        <div class="date-label" id="dateLabel"></div>
+        <button class="btn btn-ghost btn-sm" id="todayBtn">Dnes</button>
+      </div>
+      <div class="grid-scroll"><div class="court-grid" id="courtGrid">Načítání…</div></div>
+      <div class="legend">
+        <span class="sw"><span class="box" style="background:repeating-linear-gradient(135deg,#fff,#fff 3px,#FCFAF7 3px,#FCFAF7 6px)"></span>Volné</span>
+        <span class="sw"><span class="box" style="background:var(--paper-dim)"></span>Obsazené / akce</span>
+        <span class="sw"><span class="box" style="background:var(--amber-bg)"></span>Open Match (hledá hráče)</span>
+        <span class="sw"><span class="box" style="background:var(--ok-bg)"></span>Moje rezervace</span>
+      </div>
+    </div>
   </section>
 
-  <div class="search-row">
-    <span class="search-icon" aria-hidden="true">🔍</span>
-    <input type="search" id="searchInput" placeholder="Hledat akci…" aria-label="Hledat akci" />
-  </div>
-
-  <nav class="filters" id="filters" aria-label="Filtrovat akce podle typu"></nav>
-
-  <section class="events-list" id="eventsList" aria-live="polite">
-    <p class="loading-state" id="loadingState">Načítám akce…</p>
+  <section class="view" id="view-mine">
+    <h1 class="page-title">Moje rezervace</h1>
+    <p class="page-sub">Přehled tvých rezervací napříč všemi hřišti a stav platby.</p>
+    <div class="card-list" id="mineList">Načítání…</div>
   </section>
 
-  <p class="empty-state" id="emptyState" hidden>Nic jsme nenašli. Zkus jiný filtr nebo jiné hledání.</p>
-
-  <section class="past-section" id="pastSection" hidden>
-    <button class="past-toggle" id="pastToggle">
-      <span>Proběhlé akce</span>
-      <span class="past-toggle-arrow">▾</span>
-    </button>
-    <div class="events-list past-list" id="pastList" hidden></div>
+  <section class="view" id="view-openmatches">
+    <h1 class="page-title">Open Matches</h1>
+    <p class="page-sub">Rezervace, kde organizátor hledá další hráče. Domluva probíhá přes WhatsApp.</p>
+    <div class="card-list" id="openList">Načítání…</div>
   </section>
 
-  <p class="demo-note" id="demoNote" hidden>
-    ⚡ Aplikace běží v demo režimu s ukázkovými daty. Připojení na Supabase nastavíš v <code>config.js</code>.
-  </p>
+  <section class="view" id="view-calendar">
+    <h1 class="page-title">Kalendář akcí</h1>
+    <p class="page-sub">Klubové akce se automaticky promítají do dostupnosti kurtů v modulu Rezervace.</p>
+    <div class="card-list" id="calendarList">Načítání…</div>
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="window.open('https://padelklatovy.github.io/kalendar/', '_blank')">Otevřít plný kalendář ↗</button>
+      <button class="btn btn-ghost" onclick="window.open('https://padelklatovy.github.io/padel-klatovy-bar/', '_blank')">🍺 Klubový bar ↗</button>
+      <button class="btn btn-ghost" onclick="window.open('https://padelklatovy.github.io/zdravyhrac/', '_blank')">❤️ Zdravý hráč ↗</button>
+    </div>
+  </section>
 
-  <nav class="quick-links" id="quickLinks" aria-label="Další klubové aplikace"></nav>
+  <section class="view" id="view-admin">
+    <h1 class="page-title">Admin</h1>
+    <p class="page-sub">Přehled rezervací napříč hřišti, nezaplacené platby, ruční správa.</p>
+    <div class="admin-grid" id="adminStats"></div>
+    <div class="section-title">Čeká na platbu</div>
+    <table class="admin-table" id="pendingTable"></table>
+    <div class="section-title">Členové</div>
+    <p class="page-sub" style="margin-top:-6px;">Skutečná tabulka <code>member_profiles</code>. Slevu edituje jen admin zde.</p>
+    <div class="field" style="max-width:320px;"><input id="memberSearch" placeholder="Začněte psát jméno..." oninput="renderMembers()"></div>
+    <table class="admin-table" id="membersTable" style="margin-top:12px;"></table>
+    <div class="section-title">Opakované rezervace (série)</div>
+    <p class="page-sub" style="margin-top:-6px;">Pravidelné skupiny — zrušíš celou sérii jedním tlačítkem, ne termín po termínu.</p>
+    <table class="admin-table" id="seriesTable"></table>
+
+    <div class="section-title">Hromadná blokace (víc hodin najednou)</div>
+    <p class="page-sub" style="margin-top:-6px;">Pro jednu rezervaci nebo krátkou blokaci stačí kliknout přímo do gridu v Rezervacích. Tohle je pro turnaj/akci přes víc hodin.</p>
+    <div class="card" style="display:block;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="field" style="flex:2;min-width:180px;margin:0;"><label>Název akce</label><input id="blockName" placeholder="např. Letní turnaj"></div>
+        <div class="field" style="flex:1;min-width:160px;margin:0;"><label>Kurt</label><select id="blockCourt"></select></div>
+        <div class="field" style="flex:1;min-width:100px;margin:0;"><label>Od</label><select id="blockFrom"></select></div>
+        <div class="field" style="flex:1;min-width:100px;margin:0;"><label>Do</label><select id="blockTo"></select></div>
+        <button class="btn btn-dark" onclick="createBlock()">Zablokovat</button>
+      </div>
+      <div class="checkbox-row" style="margin-bottom:0;">
+        <input type="checkbox" id="blockAsTournament" checked>
+        <div><div class="cb-title">Zobrazit i v Kalendáři jako turnaj</div><div class="cb-sub">Založí odpovídající akci v appce Kalendář (kategorie „Turnaj"), lidi ji uvidí tam i tady.</div></div>
+      </div>
+    </div>
+    <div class="section-title">Všechny rezervace</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+      <input id="allSearch" placeholder="Hledat podle jména..." style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;" oninput="renderAdminTable()">
+      <select id="allFilter" onchange="renderAdminTable()" style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;">
+        <option value="future" selected>Budoucí</option>
+        <option value="past">Minulé</option>
+        <option value="all">Vše</option>
+      </select>
+    </div>
+    <table class="admin-table" id="allTable"></table>
+  </section>
+
 </main>
 
-<div class="modal-overlay" id="modalOverlay" hidden>
-  <div class="modal-sheet" id="modalSheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div>
+<!-- LOGIN: magic link -->
+<div class="overlay" id="loginOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('loginOverlay')">×</button>
+    <h2>Přihlášení</h2>
+    <p class="modal-sub">Pošleme ti přihlašovací odkaz na e-mail — žádné heslo.</p>
+    <div class="field"><label>E-mail</label><input id="loginEmail" placeholder="jana@example.com" type="email"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="sendMagicLink()">Poslat přihlašovací odkaz</button>
+    <div id="loginStatus" style="margin-top:12px;font-size:13px;color:#767066;"></div>
+  </div>
 </div>
 
-<footer class="site-footer">
-  <p>Padel Klatovy · Kalendář nenahrazuje rezervace kurtů přes Paysy</p>
-</footer>
+<!-- DOKONČENÍ PROFILU (po prvním přihlášení) -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal">
+    <h2>Dokončit registraci</h2>
+    <p class="modal-sub">Jméno a telefon potřebujeme kvůli rezervaci a QR platbě.</p>
+    <div class="field"><label>Jméno a příjmení</label><input id="profileName" placeholder="Jana Nováková"></div>
+    <div class="field"><label>Telefon</label><input id="profilePhone" placeholder="+420 602 000 000"></div>
+    <div class="field"><label>Herní úroveň</label><select id="profileLevel"></select></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="saveProfile()">Uložit a pokračovat</button>
+  </div>
+</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-<script src="sample-data.js"></script>
-<script src="data-service.js"></script>
-<script src="openmatch-service.js"></script>
-<script src="app.js"></script>
+<div class="overlay" id="adminSlotOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('adminSlotOverlay')">×</button>
+    <h2>Slot v gridu</h2>
+    <p class="modal-sub" id="adminSlotSub"></p>
+    <div id="adminSlotContent"></div>
+  </div>
+</div>
+
+<div class="overlay" id="bookingOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('bookingOverlay')">×</button>
+    <h2>Nová rezervace</h2>
+    <p class="modal-sub" id="bookingSub"></p>
+    <div class="field"><label>Kurt</label><select id="courtSelect" onchange="onCourtChange()"></select></div>
+    <div style="display:flex;gap:10px;">
+      <div class="field" style="flex:1;"><label>Začátek</label><select id="startTimeSelect" onchange="onStartTimeChange()"></select></div>
+      <div class="field" style="flex:1;"><label>Konec</label><select id="endTimeSelect" onchange="onEndTimeChange()"></select></div>
+    </div>
+    <div id="organizerFields"></div>
+    <div class="duration-box">
+      <div class="dlabel"><span>Délka</span><span id="durationValueLabel"></span></div>
+      <div class="drange-note" id="durationNote"></div>
+    </div>
+    <div class="players-box">
+      <div class="p-title">Hráči (sleva se promítne do ceny)</div>
+      <div id="playersList"></div>
+      <button class="add-player-btn" id="addPlayerBtn" onclick="addPlayerRow()">+ Přidat spoluhráče</button>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="repeatCheck" onchange="onRepeatToggle(this.checked)">
+      <div style="flex:1;">
+        <div class="cb-title">Opakovat každý týden</div>
+        <div class="cb-sub">Pro pravidelné skupiny (trénink, liga). Vytvoří sérii rezervací, kterou pak smažeš jedním tlačítkem.</div>
+        <div id="repeatBox" style="display:none;margin-top:10px;">
+          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">Název série</label><input id="seriesName" placeholder="např. Čtvrteční skupina Novákovi"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:12px;">Opakovat do (včetně)</label><input type="date" id="seriesUntil"></div>
+        </div>
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="openMatchCheck" onchange="document.getElementById('openMatchLevelBox').style.display=this.checked?'block':'none'">
+      <div style="flex:1;">
+        <div class="cb-title">Chci hledat spoluhráče</div>
+        <div class="cb-sub">Rezervace se zobrazí v Open Matches, ostatní se budou moct přihlásit.</div>
+        <div id="openMatchLevelBox" style="display:none;margin-top:10px;">
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Požadovaná úroveň</label>
+          <select id="openMatchLevel" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;"></select>
+        </div>
+      </div>
+    </div>
+    <div id="paidToggleBox"></div>
+    <div class="price-box">
+      <div class="price-row"><span>Cena (<span id="priceDurationLabel"></span>)</span><span id="basePriceLabel"></span></div>
+      <div class="price-row" id="discountRow"><span>Průměrná sleva hráčů</span><span id="discountLabel"></span></div>
+      <div class="price-row total"><span>K úhradě</span><span id="totalPriceLabel"></span></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;" id="confirmBookingBtn" onclick="confirmBooking()">Vytvořit rezervaci</button>
+  </div>
+</div>
+
+<div class="overlay" id="paymentOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('paymentOverlay')">×</button>
+    <h2>Platba QR kódem</h2>
+    <p class="modal-sub">Naskenuj v bankovní appce. Po připsání platby se rezervace potvrdí automaticky (dnes: manuálně tlačítkem níže — FIO polling zatím není zapojen).</p>
+    <div class="qr-box">
+      <div class="qr-visual" id="qrVisual"></div>
+      <div class="qr-meta" id="qrMeta"></div>
+      <div id="paymentStatusBox"></div>
+    </div>
+    <button class="btn btn-green" style="width:100%;margin-top:6px;" id="simulatePayBtn" onclick="simulatePayment()">Simulovat příchozí platbu (demo)</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:8px;" onclick="closeModal('paymentOverlay')">Zavřít, doplatím později</button>
+  </div>
+</div>
+
+<div class="overlay" id="memberDetailOverlay">
+  <div class="modal" style="max-width:560px;">
+    <button class="modal-close" onclick="closeModal('memberDetailOverlay')">×</button>
+    <h2 id="memberDetailName">Detail zákazníka</h2>
+    <p class="modal-sub">Kontakt, sleva a historie rezervací.</p>
+    <div id="memberDetailContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= SUPABASE ================= */
+const SUPABASE_URL = 'https://ppntayyhksqgsxmemvaj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwbnRheXloa3NxZ3N4bWVtdmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDc3MTcsImV4cCI6MjA5ODkyMzcxN30.IGm4fpF8NQIjEDesJACYOHqFcVtKB9n-6PWtRWbXyVc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ================= CONFIG (statické konstanty, zbytek jde z DB) ================= */
+const MAX_DURATION_CAP = 4;
+const VENUE_ORDER = ['padel-klatovy', 'beachvolley-klatovy', 'padel-brandys'];
+function orderedVenueSlugs(){
+  const known = VENUE_ORDER.filter(s => venuesConfig[s]);
+  const rest = Object.keys(venuesConfig).filter(s => !VENUE_ORDER.includes(s)).sort();
+  return known.concat(rest);
+}
+const DISCOUNT_OPTIONS = [0, 20, 50, 100];
+const PLAYER_LEVELS = [
+  { code:'D2', label:'D2 — Začátečník' },
+  { code:'D1', label:'D1 — Začátečník+' },
+  { code:'C2', label:'C2 — Mírně pokročilý' },
+  { code:'C1', label:'C1 — Mírně pokročilý+' },
+  { code:'B2', label:'B2 — Pokročilý' },
+  { code:'B1', label:'B1 — Pokročilý+' },
+  { code:'A',  label:'A — Závodní' },
+];
+
+/* ================= STATE ================= */
+let session = null;
+let profile = null;             // řádek z member_profiles
+let CLUB_ID = null;
+let venuesConfig = {};          // slug -> {id, name, priceHour, minDuration, slotStep, dayStart, dayEnd, bookingWindowDays, minPlayers, maxPlayers, courts:[...]}
+let currentLocationId = null;
+let selectedDate = todayISO();
+let gridReservations = [];      // rezervace pro aktuální venue+datum
+let booking = null;
+let activeReservationId = null;
+
+function todayISO(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function activeLoc(){ return venuesConfig[currentLocationId]; }
+function isAdmin(){ return profile && (profile.role==='admin' || profile.role==='owner'); }
+function slotStarts(loc){
+  const arr = []; const step = loc.slotStep;
+  for(let h = loc.dayStart; h <= loc.dayEnd - loc.minDuration + 1e-9; h += step){ arr.push(Math.round(h*(1/step))/(1/step)); }
+  return arr;
+}
+function findCourt(courtId){
+  for(const slug in venuesConfig){
+    const c = venuesConfig[slug].courts.find(c=>c.id===courtId);
+    if(c) return {...c, locationSlug:slug, locationName:venuesConfig[slug].name};
+  }
+  return {name:'Neznámý kurt', sub:'', locationSlug:null, locationName:'—'};
+}
+function formatHour(h){ const hh=Math.floor(h); const mm=Math.round((h-hh)*60); return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
+function fmtDate(iso){ const d = new Date(iso+'T00:00:00'); return d.toLocaleDateString('cs-CZ', {weekday:'long', day:'numeric', month:'long'}); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+function showModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+function genVS(){ return Date.now().toString().slice(-9); }
+function genQR(){ const c=[]; for(let i=0;i<81;i++) c.push(Math.random()>0.45); return c; }
+function avgDiscount(players){ if(!players.length) return 0; return Math.round(players.reduce((s,p)=>s+p.discount,0) / players.length); }
+function populateLevelSelect(selectId, selectedCode){
+  const el = document.getElementById(selectId); if(!el) return;
+  el.innerHTML = PLAYER_LEVELS.map(l=>`<option value="${l.code}" ${l.code===(selectedCode||'C2')?'selected':''}>${l.label}</option>`).join('');
+}
+
+/* ================= AUTH ================= */
+async function sendMagicLink(){
+  const email = document.getElementById('loginEmail').value.trim();
+  if(!email){ toast('Zadej e-mail'); return; }
+  document.getElementById('loginStatus').textContent = 'Odesílám...';
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
+  document.getElementById('loginStatus').textContent = error ? ('Chyba: ' + error.message) : 'Hotovo — zkontroluj e-mail a klikni na odkaz.';
+}
+async function logout(){ await sb.auth.signOut(); session=null; profile=null; renderHeader(); renderAll(); }
+
+async function loadProfile(){
+  const { data, error } = await sb.from('member_profiles').select('*').eq('user_id', session.user.id).maybeSingle();
+  if(error){ console.error(error); return; }
+  if(!data){
+    populateLevelSelect('profileLevel','C2');
+    showModal('profileOverlay');
+    profile = null;
+  } else {
+    profile = data;
+  }
+}
+async function saveProfile(){
+  const full_name = document.getElementById('profileName').value.trim();
+  const phone = document.getElementById('profilePhone').value.trim();
+  const level = document.getElementById('profileLevel').value;
+  if(!full_name || !phone){ toast('Vyplň jméno i telefon'); return; }
+  const { data, error } = await sb.from('member_profiles').insert({
+    user_id: session.user.id, club_id: CLUB_ID, full_name, phone, level, role:'member', discount_percent:0
+  }).select().single();
+  if(error){ toast('Chyba: ' + error.message); return; }
+  profile = data;
+  closeModal('profileOverlay');
+  renderHeader(); renderAll();
+  toast(`Vítej, ${full_name}!`);
+}
+
+/* ================= HEADER / NAV ================= */
+function renderHeader(){
+  const el = document.getElementById('headerRight');
+  if(!session){ el.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showModal('loginOverlay')">Přihlásit se</button>`; }
+  else if(!profile){ el.innerHTML = `<span style="font-size:13px;">Dokonči registraci…</span>`; }
+  else {
+    el.innerHTML = `
+      <div class="profile-pill" onclick="toggleProfileMenu(event)">
+        <span class="dot"></span> ${profile.full_name.split(' ')[0]} ${isAdmin()?'· admin':''}
+        <div class="profile-menu" id="profileMenu">
+          <button onclick="event.stopPropagation();closeProfileMenu();logout()">Odhlásit se</button>
+        </div>
+      </div>`;
+  }
+  document.querySelector('[data-view="admin"]').style.display = isAdmin() ? '' : 'none';
+}
+function toggleProfileMenu(e){ e.stopPropagation(); document.getElementById('profileMenu').classList.toggle('show'); }
+function closeProfileMenu(){ const m=document.getElementById('profileMenu'); if(m) m.classList.remove('show'); }
+document.addEventListener('click', closeProfileMenu);
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  if(e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+e.target.dataset.view).classList.add('active');
+  const v = e.target.dataset.view;
+  if(v==='admin') renderAdmin();
+  if(v==='mine') renderMine();
+  if(v==='openmatches') renderOpen();
+  if(v==='calendar') renderCalendar();
+});
+
+/* ================= VENUES / COURTS z DB ================= */
+async function loadVenues(){
+  const { data: clubs } = await sb.from('clubs').select('id').limit(1);
+  CLUB_ID = clubs && clubs[0] ? clubs[0].id : null;
+  const { data: venues, error } = await sb.from('venues').select('*, courts(*)').order('name');
+  if(error){ toast('Chyba načítání hřišť: ' + error.message); return; }
+  venuesConfig = {};
+  venues.forEach(v=>{
+    venuesConfig[v.slug] = {
+      id: v.id, clubId: v.club_id, name: v.name, sport: v.sport,
+      priceHour: Number(v.price_per_hour), minDuration: Number(v.min_duration_hours),
+      slotStep: v.slot_step_minutes/60, dayStart: v.day_start_hour, dayEnd: v.day_end_hour,
+      bookingWindowDays: v.booking_window_days, minPlayers: v.min_players, maxPlayers: v.max_players,
+      courts: v.courts.map(c=>({id:c.id, name:c.name, sub:c.sub_label})).sort((a,b)=>a.name.localeCompare(b.name))
+    };
+  });
+}
+
+/* ================= PRODUKTOVÝ VÝBĚR ================= */
+function renderProductSelector(){
+  const el = document.getElementById('productSelector');
+  el.innerHTML = orderedVenueSlugs().map(slug=>{
+    const loc = venuesConfig[slug];
+    return `<div class="product-card">
+      <div class="product-photo">${loc.sport}</div>
+      <div class="product-body">
+        <b>${loc.name}</b>
+        <span class="p-meta">${loc.courts.length} kurty · ${loc.priceHour} Kč/hod · min. ${loc.minDuration} h</span>
+        <button class="btn btn-primary" onclick="selectProduct('${slug}')">Rezervovat</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function selectProduct(slug){
+  currentLocationId = slug;
+  document.getElementById('productSelector').style.display = 'none';
+  document.getElementById('gridWrap').style.display = '';
+  document.getElementById('reservationsIntro').style.display = 'none';
+  document.getElementById('activeProductLabel').textContent = venuesConfig[slug].name;
+  await renderGrid();
+}
+function backToProducts(){
+  currentLocationId = null;
+  document.getElementById('productSelector').style.display = '';
+  document.getElementById('gridWrap').style.display = 'none';
+  document.getElementById('reservationsIntro').style.display = '';
+  renderProductSelector();
+}
+
+/* ================= GRID ================= */
+async function loadGridReservations(){
+  const loc = activeLoc();
+  const { data, error } = await sb.from('reservations').select('*').eq('venue_id', loc.id).eq('date', selectedDate);
+  if(error){ toast('Chyba načítání rezervací: ' + error.message); gridReservations = []; return; }
+  gridReservations = data;
+}
+function findReservationAt(courtId, hour){
+  return gridReservations.find(r => r.court_id===courtId && hour >= r.start_hour && hour < r.end_hour && !['cancelled_by_user','cancelled_by_admin'].includes(r.status));
+}
+function computeMaxDuration(loc, courtId, startHour){
+  let h = startHour;
+  while(h < loc.dayEnd){
+    const occ = gridReservations.find(r => r.court_id===courtId && h >= r.start_hour && h < r.end_hour && !['cancelled_by_user','cancelled_by_admin'].includes(r.status));
+    if(occ) break;
+    h += loc.slotStep;
+  }
+  return Math.min(Math.round((h-startHour)*(1/loc.slotStep))/(1/loc.slotStep), MAX_DURATION_CAP);
+}
+async function renderGrid(){
+  if(!currentLocationId) return;
+  document.getElementById('courtGrid').innerHTML = 'Načítání…';
+  await loadGridReservations();
+  const loc = activeLoc();
+  const starts = slotStarts(loc);
+  document.getElementById('dateLabel').textContent = fmtDate(selectedDate);
+  const grid = document.getElementById('courtGrid');
+  let html = `<div class="grid-row" style="grid-template-columns:110px repeat(${starts.length},1fr);"><div class="cell court-label" style="background:var(--ink);color:#fff;"></div>`;
+  starts.forEach(s => html += `<div class="cell ${s%1!==0?'half':''}">${formatHour(s)}</div>`);
+  html += `</div>`;
+
+  loc.courts.forEach(court => {
+    html += `<div class="grid-row" style="grid-template-columns:110px repeat(${starts.length},1fr);"><div class="court-label">${court.name}<small>${court.sub||''}</small></div>`;
+    starts.forEach(s => {
+      const r = findReservationAt(court.id, s);
+      let cls='free', tag='', clickable=true;
+      if(r){
+        const isHead = (r.start_hour === s);
+        if(r.status==='club_blocked'){ cls='blocked'; tag = isHead ? (r.event_name||'Akce') : ''; clickable = isAdmin(); }
+        else if(r.is_open_match && r.status==='paid_confirmed'){ cls='openmatch'; tag = isHead ? 'Open Match' : ''; }
+        else if(profile && r.member_id===profile.user_id){ cls='mine'; tag = isHead ? (r.status==='pending_payment' ? 'Čeká platba' : 'Moje') : ''; }
+        else { cls='blocked'; tag = isHead ? 'Obsazeno' : ''; clickable = isAdmin(); }
+        if(!isHead) cls += ' continuation';
+      }
+      html += `<div class="cell"><div class="slot ${cls}" ${clickable?`onclick="openSlot('${court.id}',${s})"`:''}>${tag?`<span class="tag">${tag}</span>`:''}</div></div>`;
+    });
+    html += `</div>`;
+  });
+  grid.innerHTML = html;
+}
+
+/* ================= KLIK DO SLOTU ================= */
+async function openSlot(courtId, hour){
+  const loc = activeLoc();
+  const existing = findReservationAt(courtId, hour);
+
+  if(isAdmin()){ openAdminSlotModal(courtId, hour, existing); return; }
+
+  if(existing){
+    if(profile && existing.member_id===profile.user_id){ activeReservationId=existing.id; await openPaymentModalFor(existing); }
+    else if(existing.is_open_match){ joinOpenMatch(existing.id); }
+    return;
+  }
+  if(!session){ toast('Nejdřív se přihlas'); showModal('loginOverlay'); return; }
+  if(!profile){ toast('Nejdřív dokonči registraci'); return; }
+
+  const daysAhead = Math.round((new Date(selectedDate+'T00:00:00') - new Date(todayISO()+'T00:00:00')) / 86400000);
+  if(daysAhead > loc.bookingWindowDays){ toast(`Tohle hřiště jde rezervovat max. ${loc.bookingWindowDays} dní dopředu`); return; }
+
+  const maxDur = computeMaxDuration(loc, courtId, hour);
+  if(maxDur < loc.minDuration){ toast(`Pro tenhle čas není dost volného prostoru na minimální rezervaci ${loc.minDuration} h`); return; }
+
+  openBookingModal({courtId, startHour:hour, maxDuration:maxDur, adminMode:false});
+}
+
+/* ================= BOOKING MODAL ================= */
+function openBookingModal({courtId, startHour, adminMode}){
+  const loc = activeLoc();
+  booking = {
+    courtId, startHour, adminMode, loc,
+    duration: loc.minDuration,
+    players: adminMode ? [] : [{name: profile.full_name, discount: profile.discount_percent, isOrganizer:true}],
+    paidNow: false
+  };
+  document.getElementById('bookingSub').textContent = `${loc.name} · ${fmtDate(selectedDate)}`;
+  populateCourtSelect();
+  populateStartSelect();
+
+  const orgBox = document.getElementById('organizerFields');
+  if(adminMode){
+    orgBox.innerHTML = `
+      <div class="field"><label>Organizátor — jméno</label><input id="orgName" placeholder="Jana Nováková" oninput="syncOrganizer()"></div>
+      <div class="field"><label>Telefon (volitelné)</label><input id="orgPhone" placeholder="+420 600 000 000"></div>
+      <div class="field"><label>Sleva organizátora</label>
+        <select id="orgDiscount" onchange="syncOrganizer()">${DISCOUNT_OPTIONS.map(d=>`<option value="${d}">${d===100?'100 % (zdarma)':d+' %'}</option>`).join('')}</select>
+      </div>`;
+  } else {
+    orgBox.innerHTML = `<div class="player-row fixed"><span>Organizátor: <b>${profile.full_name}</b> — sleva ${profile.discount_percent} %</span></div>`;
+  }
+
+  document.getElementById('openMatchCheck').checked = false;
+  document.getElementById('openMatchCheck').disabled = false;
+  document.getElementById('openMatchLevelBox').style.display = 'none';
+  populateLevelSelect('openMatchLevel', profile ? profile.level : 'C2');
+
+  document.getElementById('repeatCheck').checked = false;
+  document.getElementById('repeatBox').style.display = 'none';
+  document.getElementById('seriesName').value = '';
+  const untilDefault = new Date(selectedDate+'T00:00:00'); untilDefault.setDate(untilDefault.getDate()+84);
+  const minUntil = new Date(selectedDate+'T00:00:00'); minUntil.setDate(minUntil.getDate()+7);
+  document.getElementById('seriesUntil').value = untilDefault.toISOString().slice(0,10);
+  document.getElementById('seriesUntil').min = minUntil.toISOString().slice(0,10);
+
+  document.getElementById('paidToggleBox').innerHTML = adminMode ? `
+    <div class="checkbox-row"><input type="checkbox" id="paidNowCheck" onchange="booking.paidNow=this.checked">
+      <div><div class="cb-title">Už zaplaceno (hotově / bar kredit)</div><div class="cb-sub">Jinak zůstane ve stavu „Čeká na platbu" s QR kódem.</div></div></div>` : '';
+
+  document.querySelector('.players-box .p-title').textContent = `Hráči se slevou (nepovinné, max. ${loc.maxPlayers} na kurtu)`;
+
+  renderPlayersList();
+  document.getElementById('confirmBookingBtn').textContent = adminMode ? 'Vytvořit rezervaci' : 'Vytvořit rezervaci a zobrazit QR';
+  showModal('bookingOverlay');
+}
+function getValidStarts(loc, courtId){
+  return slotStarts(loc).filter(s => computeMaxDuration(loc, courtId, s) >= loc.minDuration);
+}
+function populateCourtSelect(){
+  const loc = booking.loc;
+  const sel = document.getElementById('courtSelect');
+  sel.innerHTML = loc.courts.map(c=>`<option value="${c.id}" ${c.id===booking.courtId?'selected':''}>${c.name}${c.sub?' — '+c.sub:''}</option>`).join('');
+}
+function onCourtChange(){
+  booking.courtId = document.getElementById('courtSelect').value;
+  const starts = getValidStarts(booking.loc, booking.courtId);
+  if(!starts.includes(booking.startHour)) booking.startHour = starts.length ? starts[0] : booking.startHour;
+  populateStartSelect();
+}
+function populateStartSelect(){
+  const loc = booking.loc;
+  const starts = getValidStarts(loc, booking.courtId);
+  const sel = document.getElementById('startTimeSelect');
+  if(!starts.length){ sel.innerHTML = '<option>Žádný volný čas</option>'; document.getElementById('endTimeSelect').innerHTML=''; return; }
+  if(!starts.includes(booking.startHour)) booking.startHour = starts[0];
+  sel.innerHTML = starts.map(s=>`<option value="${s}" ${s===booking.startHour?'selected':''}>${formatHour(s)}</option>`).join('');
+  populateEndSelect();
+}
+function onStartTimeChange(){
+  booking.startHour = parseFloat(document.getElementById('startTimeSelect').value);
+  populateEndSelect();
+}
+function populateEndSelect(){
+  const loc = booking.loc;
+  const maxDur = computeMaxDuration(loc, booking.courtId, booking.startHour);
+  const ends = [];
+  for(let d=loc.minDuration; d<=maxDur+1e-9; d+=loc.slotStep){
+    ends.push(Math.round((booking.startHour+d)*(1/loc.slotStep))/(1/loc.slotStep));
+  }
+  const sel = document.getElementById('endTimeSelect');
+  const currentEnd = booking.startHour + booking.duration;
+  const defaultEnd = ends.includes(currentEnd) ? currentEnd : ends[0];
+  sel.innerHTML = ends.map(e=>`<option value="${e}" ${e===defaultEnd?'selected':''}>${formatHour(e)}</option>`).join('');
+  booking.duration = defaultEnd - booking.startHour;
+  updateDurationSummary();
+}
+function onEndTimeChange(){
+  const end = parseFloat(document.getElementById('endTimeSelect').value);
+  booking.duration = end - booking.startHour;
+  updateDurationSummary();
+}
+function updateDurationSummary(){
+  const court = booking.loc.courts.find(c=>c.id===booking.courtId);
+  document.getElementById('bookingSub').textContent = `${booking.loc.name} · ${court.name} · ${fmtDate(selectedDate)}`;
+  document.getElementById('durationValueLabel').textContent = `${booking.duration} h`;
+  document.getElementById('durationNote').textContent = `${formatHour(booking.startHour)}–${formatHour(booking.startHour+booking.duration)}`;
+  updatePriceBox();
+}
+function onRepeatToggle(checked){
+  document.getElementById('repeatBox').style.display = checked ? 'block' : 'none';
+  const omCheck = document.getElementById('openMatchCheck');
+  omCheck.disabled = checked;
+  if(checked){ omCheck.checked = false; document.getElementById('openMatchLevelBox').style.display = 'none'; }
+}
+function syncOrganizer(){
+  const name = document.getElementById('orgName').value.trim();
+  const discount = parseInt(document.getElementById('orgDiscount').value,10);
+  const existingOrg = booking.players.find(p=>p.isOrganizer);
+  if(existingOrg){ existingOrg.name = name || 'Organizátor'; existingOrg.discount = discount; }
+  else booking.players.unshift({name: name || 'Organizátor', discount, isOrganizer:true});
+  updatePriceBox();
+}
+function renderPlayersList(){
+  const el = document.getElementById('playersList');
+  const extra = booking.players.filter(p=>!p.isOrganizer);
+  el.innerHTML = extra.map((p, idx) => `
+    <div class="player-row">
+      <input value="${p.name}" placeholder="Jméno spoluhráče" oninput="updatePlayerName(${idx}, this.value)">
+      <select onchange="updatePlayerDiscount(${idx}, this.value)">${DISCOUNT_OPTIONS.map(d=>`<option value="${d}" ${d===p.discount?'selected':''}>${d===100?'100 %':d+' %'}</option>`).join('')}</select>
+      <button class="rm" onclick="removePlayerRow(${idx})">×</button>
+    </div>`).join('');
+  document.getElementById('addPlayerBtn').style.display = booking.players.length >= booking.loc.maxPlayers ? 'none' : '';
+}
+function addPlayerRow(){
+  if(booking.players.length >= booking.loc.maxPlayers){ toast(`Max. ${booking.loc.maxPlayers} hráčů na tuhle rezervaci`); return; }
+  booking.players.push({name:'', discount:0, isOrganizer:false});
+  renderPlayersList(); updatePriceBox();
+}
+function updatePlayerName(idx, val){ booking.players.filter(p=>!p.isOrganizer)[idx].name = val; }
+function updatePlayerDiscount(idx, val){ booking.players.filter(p=>!p.isOrganizer)[idx].discount = parseInt(val,10); updatePriceBox(); }
+function removePlayerRow(idx){
+  const extra = booking.players.filter(p=>!p.isOrganizer);
+  const target = extra[idx];
+  booking.players = booking.players.filter(p=>p!==target);
+  renderPlayersList(); updatePriceBox();
+}
+function updatePriceBox(){
+  const base = Math.round(booking.duration * booking.loc.priceHour);
+  const discount = avgDiscount(booking.players.length ? booking.players : [{discount:0}]);
+  const total = Math.round(base * (1 - discount/100));
+  document.getElementById('priceDurationLabel').textContent = booking.duration + ' h';
+  document.getElementById('basePriceLabel').textContent = base + ' Kč';
+  if(discount > 0){
+    document.getElementById('discountRow').style.display='flex';
+    document.getElementById('discountLabel').innerHTML = `<span class="badge-discount">−${discount} %</span>`;
+  } else { document.getElementById('discountRow').style.display='none'; }
+  document.getElementById('totalPriceLabel').textContent = total + ' Kč';
+}
+
+async function confirmBooking(){
+  if(booking.adminMode){
+    const name = (document.getElementById('orgName').value||'').trim();
+    if(!name){ toast('Vyplň jméno organizátora'); return; }
+    syncOrganizer();
+  }
+  if(booking.players.some(p=>!p.name || !p.name.trim())){ toast('Doplň jména všech hráčů, nebo je odeber'); return; }
+
+  const isRepeat = document.getElementById('repeatCheck').checked;
+  if(isRepeat) await confirmBookingRecurring();
+  else await confirmBookingSingle();
+}
+
+function buildBasePayload(date){
+  const base = Math.round(booking.duration * booking.loc.priceHour);
+  const discount = avgDiscount(booking.players);
+  const amount = Math.round(base * (1 - discount/100));
+  const paidNow = booking.adminMode && booking.paidNow;
+  const organizer = booking.players.find(p=>p.isOrganizer) || booking.players[0];
+  return {
+    payload: {
+      club_id: CLUB_ID, venue_id: booking.loc.id, court_id: booking.courtId,
+      member_id: booking.adminMode ? null : profile.user_id,
+      organizer_name: organizer.name,
+      organizer_phone: booking.adminMode ? (document.getElementById('orgPhone').value||'') : profile.phone,
+      date, start_hour: booking.startHour, duration_hours: booking.duration, end_hour: booking.startHour + booking.duration,
+      type: 'member_booking',
+      status: (amount===0 || paidNow) ? 'paid_confirmed' : 'pending_payment',
+      base_price: base, discount_applied: discount, amount_due: amount,
+      players: booking.players, is_open_match: false,
+      created_by: booking.adminMode ? (session.user.email) : null,
+      paid_at: (amount===0 || paidNow) ? new Date().toISOString() : null
+    },
+    amount, paidNow
+  };
+}
+
+async function confirmBookingSingle(){
+  const isOpenMatch = document.getElementById('openMatchCheck').checked;
+  const { payload, amount } = buildBasePayload(selectedDate);
+  payload.is_open_match = isOpenMatch;
+
+  const { data: reservation, error } = await sb.from('reservations').insert(payload).select().single();
+  if(error){ toast('Chyba: ' + error.message); return; }
+
+  if(isOpenMatch){
+    await sb.from('open_matches').insert({
+      reservation_id: reservation.id,
+      organizer_member_id: booking.adminMode ? null : profile.user_id,
+      players_needed: 2,
+      level: document.getElementById('openMatchLevel').value,
+      status: 'open'
+    });
+  }
+
+  let payment = null;
+  if(reservation.status === 'pending_payment'){
+    const { data: p } = await sb.from('payments').insert({
+      club_id: CLUB_ID, reservation_id: reservation.id, amount: reservation.amount_due,
+      variable_symbol: genVS(), status: 'created'
+    }).select().single();
+    payment = p;
+  }
+
+  closeModal('bookingOverlay');
+  if(reservation.status === 'paid_confirmed'){
+    toast(amount===0 ? 'Rezervace zdarma vytvořena' : 'Rezervace vytvořena a označena jako zaplacená');
+  } else {
+    activeReservationId = reservation.id;
+    await openPaymentModalFor(reservation, payment);
+  }
+  await renderGrid();
+}
+
+async function confirmBookingRecurring(){
+  const untilStr = document.getElementById('seriesUntil').value;
+  if(!untilStr){ toast('Vyber datum, do kdy se má opakovat'); return; }
+  const seriesName = (document.getElementById('seriesName').value || '').trim() || 'Pravidelná rezervace';
+
+  const dates = [];
+  let d = new Date(selectedDate+'T00:00:00');
+  const until = new Date(untilStr+'T00:00:00');
+  while(d <= until){ dates.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+7); }
+  if(dates.length < 2){ toast('Vyber datum aspoň o týden později'); return; }
+  if(dates.length > 60){ toast('Max. 60 opakování najednou (bezpečnostní pojistka)'); return; }
+
+  const { data: existing } = await sb.from('reservations').select('date,start_hour,end_hour,status')
+    .eq('court_id', booking.courtId).in('date', dates);
+  const blocked = new Set((existing||[]).filter(r=>!['cancelled_by_user','cancelled_by_admin'].includes(r.status))
+    .filter(r => booking.startHour < r.end_hour && (booking.startHour+booking.duration) > r.start_hour)
+    .map(r=>r.date));
+
+  const okDates = dates.filter(dt => !blocked.has(dt));
+  if(!okDates.length){ toast('Všechny termíny série jsou obsazené'); return; }
+
+  const seriesId = crypto.randomUUID();
+  const rows = okDates.map(dt => {
+    const { payload } = buildBasePayload(dt);
+    payload.series_id = seriesId;
+    payload.series_name = seriesName;
+    return payload;
+  });
+
+  const { data: inserted, error } = await sb.from('reservations').insert(rows).select();
+  if(error){ toast('Chyba: ' + error.message); return; }
+
+  const pendingOnes = inserted.filter(r=>r.status==='pending_payment');
+  if(pendingOnes.length){
+    await sb.from('payments').insert(pendingOnes.map(r=>({
+      club_id: CLUB_ID, reservation_id: r.id, amount: r.amount_due, variable_symbol: genVS(), status:'created'
+    })));
+  }
+
+  closeModal('bookingOverlay');
+  const skippedNote = blocked.size ? ` (${blocked.size} termínů přeskočeno — obsazeno)` : '';
+  toast(`Série „${seriesName}" vytvořena: ${okDates.length} termínů${skippedNote}`);
+
+  if(pendingOnes.length){
+    activeReservationId = pendingOnes[0].id;
+    await openPaymentModalFor(pendingOnes[0]);
+  }
+  await renderGrid();
+}
+
+/* ================= PLATBA (simulace, FIO zatím nenapojen) ================= */
+async function openPaymentModalFor(reservation, payment){
+  if(!payment){
+    const { data: p } = await sb.from('payments').select('*').eq('reservation_id', reservation.id).maybeSingle();
+    payment = p;
+  }
+  const qr = document.getElementById('qrVisual');
+  qr.innerHTML = genQR().map(on => `<div class="${on?'':'off'}"></div>`).join('');
+  document.getElementById('qrMeta').innerHTML = `Účet: <b>123456789/2010</b> · Částka: <b>${reservation.amount_due} Kč</b><br>VS: <b>${payment ? payment.variable_symbol : '—'}</b> · Zpráva: <b>Rezervace kurtu ${reservation.date} ${formatHour(reservation.start_hour)}</b>`;
+  renderPaymentStatus(reservation);
+  activeReservationId = reservation.id;
+  showModal('paymentOverlay');
+}
+function renderPaymentStatus(reservation){
+  const box = document.getElementById('paymentStatusBox'); const btn = document.getElementById('simulatePayBtn');
+  if(reservation.status === 'paid_confirmed'){ box.innerHTML = `<span class="status-pill paid">✓ Zaplaceno</span>`; btn.style.display='none'; }
+  else { box.innerHTML = `<span class="status-pill pending">Čeká na platbu</span>`; btn.style.display=''; }
+}
+async function simulatePayment(){
+  const { data: reservation, error } = await sb.from('reservations').update({ status:'paid_confirmed', paid_at: new Date().toISOString() }).eq('id', activeReservationId).select().single();
+  if(error){ toast('Chyba: ' + error.message); return; }
+  await sb.from('payments').update({ status:'manually_confirmed', paid_at: new Date().toISOString(), confirmed_by:'demo_simulace' }).eq('reservation_id', activeReservationId);
+  renderPaymentStatus(reservation);
+  toast('Platba potvrzena (simulace) — rezervace je pevná');
+  await renderGrid();
+}
+
+/* ================= MOJE REZERVACE ================= */
+async function renderMine(){
+  const el = document.getElementById('mineList');
+  if(!profile){ el.innerHTML = emptyState('Nejsi přihlášen', 'Přihlas se a uvidíš svoje rezervace zde.'); return; }
+  el.innerHTML = 'Načítání…';
+  const { data, error } = await sb.from('reservations').select('*').eq('member_id', profile.user_id).order('date',{ascending:false});
+  if(error){ el.innerHTML = emptyState('Chyba', error.message); return; }
+  if(!data.length){ el.innerHTML = emptyState('Zatím žádné rezervace', 'Vyber si hřiště v Rezervacích.'); return; }
+
+  const single = data.filter(r=>!r.series_id);
+  const seriesGroups = {};
+  data.filter(r=>r.series_id).forEach(r=>{
+    if(!seriesGroups[r.series_id]) seriesGroups[r.series_id] = [];
+    seriesGroups[r.series_id].push(r);
+  });
+
+  const seriesCards = Object.keys(seriesGroups).map(sid=>{
+    const items = seriesGroups[sid];
+    const active = items.filter(r=>!['cancelled_by_user','cancelled_by_admin'].includes(r.status));
+    if(!active.length) return '';
+    const court = findCourt(active[0].court_id);
+    const dates = active.map(i=>i.date).sort();
+    const unpaidCount = active.filter(r=>r.status==='pending_payment').length;
+    const firstUnpaid = active.find(r=>r.status==='pending_payment');
+    return `<div class="card"><div class="info">
+        <b>🔁 ${active[0].series_name} · ${court.locationName} · ${court.name}</b>
+        <div class="meta">${active.length} termínů · ${dates[0]} – ${dates[dates.length-1]} · ${formatHour(active[0].start_hour)}–${formatHour(active[0].end_hour)}${unpaidCount?` · ${unpaidCount}× čeká na platbu`:''}</div>
+      </div><div class="actions">
+        ${firstUnpaid ? `<button class="btn btn-sm btn-ghost" onclick='openPaymentModalFor(${JSON.stringify(firstUnpaid)})'>Zaplatit další</button>` : `<span class="status-pill paid">Vše zaplaceno</span>`}
+        <button class="btn btn-sm btn-ghost" onclick="cancelSeries('${sid}')">Zrušit celou sérii</button>
+      </div></div>`;
+  }).join('');
+
+  const singleCards = single.map(r => {
+    const court = findCourt(r.court_id);
+    const statusHtml = r.status==='paid_confirmed' ? `<span class="status-pill paid">Zaplaceno</span>` : (r.status==='pending_payment' ? `<span class="status-pill pending">Čeká na platbu</span>` : `<span class="status-pill blocked">${r.status}</span>`);
+    const playersNote = r.players && r.players.length>1 ? ` · ${r.players.length} hráči` : '';
+    return `<div class="card"><div class="info">
+        <b>${court.locationName} · ${court.name}</b>
+        <div class="meta">${fmtDate(r.date)} · ${formatHour(r.start_hour)}–${formatHour(r.end_hour)} · ${r.amount_due} Kč${playersNote} ${r.is_open_match?'· 🔍 Open Match':''}</div>
+      </div><div class="actions">
+        ${statusHtml}
+        ${r.status==='pending_payment' ? `<button class="btn btn-sm btn-ghost" onclick='openPaymentModalFor(${JSON.stringify(r)})'>Zaplatit</button>` : ''}
+        ${['pending_payment','paid_confirmed'].includes(r.status) ? `<button class="btn btn-sm btn-ghost" onclick="cancelReservation('${r.id}')">Zrušit</button>` : ''}
+      </div></div>`;
+  }).join('');
+
+  el.innerHTML = seriesCards + singleCards || emptyState('Zatím žádné aktivní rezervace', 'Vyber si hřiště v Rezervacích.');
+}
+async function cancelReservation(id){
+  const status = isAdmin() ? 'cancelled_by_admin' : 'cancelled_by_user';
+  const { error } = await sb.from('reservations').update({status}).eq('id', id);
+  if(error){ toast('Chyba: '+error.message); return; }
+  toast('Rezervace zrušena');
+  await renderAll();
+}
+
+/* ================= OPEN MATCHES ================= */
+async function renderOpen(){
+  const el = document.getElementById('openList');
+  el.innerHTML = 'Načítání…';
+  const { data, error } = await sb.from('reservations')
+    .select('*, open_matches(*, open_match_players(*))')
+    .eq('is_open_match', true).eq('status','paid_confirmed')
+    .gte('date', todayISO()).order('date');
+  if(error){ el.innerHTML = emptyState('Chyba', error.message); return; }
+  if(!data.length){ el.innerHTML = emptyState('Žádný otevřený zápas', 'Zaškrtni „Chci hledat spoluhráče" při rezervaci kurtu.'); return; }
+  el.innerHTML = data.map(r=>{
+    const om = r.open_matches[0];
+    const court = findCourt(r.court_id);
+    const joined = om ? om.open_match_players.length : 0;
+    const needed = om ? om.players_needed : 2;
+    const levelLabel = (PLAYER_LEVELS.find(l=>l.code===(om && om.level)) || {label: om ? om.level : ''}).label;
+    const waText = encodeURIComponent(`Hledáme hráče! ${court.locationName} – ${court.name}, ${fmtDate(r.date)} v ${formatHour(r.start_hour)}. Úroveň: ${levelLabel}. Chybí ${Math.max(needed-joined,0)} hráč(i). Napiš ${r.organizer_name} (${r.organizer_phone||''}).`);
+    return `<div class="card"><div class="info">
+        <b>${court.locationName} · ${court.name} · ${formatHour(r.start_hour)}</b>
+        <div class="meta">${fmtDate(r.date)} · organizuje ${r.organizer_name} · ${levelLabel} · přihlášeno ${joined}/${needed}</div>
+      </div><div class="actions">
+        <button class="btn btn-sm btn-green" onclick="joinOpenMatch('${r.id}')">Přihlásit se</button>
+        <a class="btn btn-sm btn-dark" style="text-decoration:none;" href="https://wa.me/?text=${waText}" target="_blank">WhatsApp</a>
+      </div></div>`;
+  }).join('');
+}
+async function joinOpenMatch(reservationId){
+  if(!profile){ toast('Nejdřív se přihlas'); showModal('loginOverlay'); return; }
+  const { data: om, error } = await sb.from('open_matches').select('*, open_match_players(*)').eq('reservation_id', reservationId).maybeSingle();
+  if(error || !om){ toast('Open match nenalezen'); return; }
+  if(om.open_match_players.some(p=>p.member_id===profile.user_id)){ toast('Už jsi přihlášen'); return; }
+  if(om.open_match_players.length >= om.players_needed){ toast('Zápas je už plný'); return; }
+  const { error: joinErr } = await sb.from('open_match_players').insert({ open_match_id: om.id, member_id: profile.user_id });
+  if(joinErr){ toast('Chyba: '+joinErr.message); return; }
+  toast('Přihlášen do Open Match');
+  await renderOpen();
+}
+
+/* ================= KALENDÁŘ ================= */
+async function renderCalendar(){
+  const el = document.getElementById('calendarList');
+  el.innerHTML = 'Načítání…';
+  const { data, error } = await sb.from('reservations').select('*').eq('type','club_event').gte('date', todayISO()).order('date');
+  const mockNote = `<div class="empty-state" style="margin-bottom:16px;padding:20px;"><div class="em-title">Toto je jen náhled napojení</div>Plný modul Kalendáře zůstává ve stávající appce a přesune se do shellu později. Zde vidíš jen akce, které blokují kurty.</div>`;
+  if(error || !data.length){ el.innerHTML = mockNote + emptyState('Žádné blokace kurtů', 'Založ turnaj v Adminu → propíše se sem i do Rezervací.'); return; }
+  el.innerHTML = mockNote + data.map(r=>{
+    const court = findCourt(r.court_id);
+    return `<div class="card"><div class="info"><b>${r.event_name}</b><div class="meta">${court.locationName} · ${court.name} · ${fmtDate(r.date)} · ${formatHour(r.start_hour)}–${formatHour(r.end_hour)}</div></div></div>`;
+  }).join('');
+}
+
+/* ================= ADMIN: rychlé akce v gridu ================= */
+function openAdminSlotModal(courtId, hour, existing){
+  const loc = activeLoc();
+  const court = loc.courts.find(c=>c.id===courtId);
+  document.getElementById('adminSlotSub').textContent = `${loc.name} · ${court.name} · ${fmtDate(selectedDate)} · ${formatHour(hour)}`;
+  const box = document.getElementById('adminSlotContent');
+
+  if(existing){
+    const who = existing.organizer_name || existing.event_name || '—';
+    const statusLabel = {pending_payment:'Čeká na platbu', paid_confirmed:'Zaplaceno', club_blocked:'Blokace/akce'}[existing.status] || existing.status;
+    box.innerHTML = `
+      <div class="price-box" style="margin-top:0;">
+        <div class="price-row"><span>Kdo / co</span><span><b>${who}</b></span></div>
+        <div class="price-row"><span>Čas</span><span>${formatHour(existing.start_hour)}–${formatHour(existing.end_hour)}</span></div>
+        <div class="price-row"><span>Stav</span><span>${statusLabel}</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+        ${existing.status==='pending_payment' ? `<button class="btn btn-green" onclick="adminConfirm('${existing.id}');closeModal('adminSlotOverlay')">Potvrdit platbu ručně</button>` : ''}
+        <button class="btn btn-ghost" onclick="cancelReservation('${existing.id}');closeModal('adminSlotOverlay')">Zrušit / uvolnit slot</button>
+      </div>`;
+    showModal('adminSlotOverlay'); return;
+  }
+  const maxDur = computeMaxDuration(loc, courtId, hour);
+  box.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-dark" ${maxDur<loc.minDuration?'disabled':''} onclick="closeModal('adminSlotOverlay');openBookingModal({courtId:'${courtId}', startHour:${hour}, maxDuration:${maxDur}, adminMode:true})">Vytvořit rezervaci</button>
+      ${maxDur<loc.minDuration ? `<p style="font-size:12px;color:#767066;margin:0 0 4px;">Méně než ${loc.minDuration} h volného prostoru — rezervaci nelze založit, jen zablokovat tento slot.</p>` : ''}
+      <button class="btn btn-ghost" onclick="showAdminBlockForm('${courtId}',${hour})">Zablokovat (turnaj / akce)</button>
+    </div>
+    <div id="adminSlotSubForm"></div>`;
+  showModal('adminSlotOverlay');
+}
+function showAdminBlockForm(courtId, hour){
+  const el = document.getElementById('adminSlotSubForm');
+  el.innerHTML = `
+    <div class="field" style="margin-top:14px;"><label>Název akce</label><input id="adminBlockName" placeholder="např. Turnaj dvojic"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="adminCreateBlockSingle('${courtId}',${hour})">Zablokovat tento slot</button>
+    <p style="font-size:12px;color:#767066;margin-top:8px;">Potřebuješ zablokovat víc hodin najednou? Použij hromadnou blokaci dole v Adminu.</p>`;
+}
+async function adminCreateBlockSingle(courtId, hour){
+  const loc = activeLoc();
+  const name = document.getElementById('adminBlockName').value.trim();
+  if(!name){ toast('Vyplň název akce'); return; }
+  const { error } = await sb.from('reservations').insert({
+    club_id: CLUB_ID, venue_id: loc.id, court_id: courtId, date: selectedDate,
+    start_hour: hour, duration_hours: loc.slotStep, end_hour: hour+loc.slotStep,
+    type:'club_event', status:'club_blocked', event_name:name, created_by: session.user.email
+  });
+  if(error){ toast('Chyba: '+error.message); return; }
+  closeModal('adminSlotOverlay'); toast(`Blokace „${name}" vytvořena`); await renderGrid();
+}
+
+/* ================= ADMIN dashboard ================= */
+let adminReservationsCache = [];
+async function renderAdmin(){
+  if(!isAdmin()){
+    document.getElementById('view-admin').innerHTML = `<h1 class="page-title">Admin</h1><div class="empty-state"><div class="em-title">Přístup jen pro adminy</div>Přihlas se účtem s rolí admin (nastaví se přímo v tabulce member_profiles).</div>`;
+    return;
+  }
+  const { data, error } = await sb.from('reservations').select('*').order('date',{ascending:false});
+  if(error){ toast('Chyba: '+error.message); return; }
+  adminReservationsCache = data;
+
+  const total = data.length;
+  const paid = data.filter(r=>r.status==='paid_confirmed').length;
+  const pending = data.filter(r=>r.status==='pending_payment');
+  const revenue = data.filter(r=>r.status==='paid_confirmed').reduce((s,r)=>s+(Number(r.amount_due)||0),0);
+
+  document.getElementById('adminStats').innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="lbl">Celkem rezervací</div></div>
+    <div class="stat-card"><div class="num">${paid}</div><div class="lbl">Zaplaceno</div></div>
+    <div class="stat-card"><div class="num">${pending.length}</div><div class="lbl">Čeká na platbu</div></div>
+    <div class="stat-card"><div class="num">${revenue} Kč</div><div class="lbl">Tržba</div></div>`;
+
+  document.getElementById('pendingTable').innerHTML = pending.length ? `
+    <tr><th>Hřiště</th><th>Kurt</th><th>Datum</th><th>Čas</th><th>Kdo</th><th>Částka</th><th></th></tr>
+    ${pending.map(r=>{ const court=findCourt(r.court_id); return `<tr>
+      <td>${court.locationName}</td><td>${court.name}</td><td>${r.date}</td><td>${formatHour(r.start_hour)}</td>
+      <td>${r.organizer_name}</td><td>${r.amount_due} Kč</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-green" onclick="adminConfirm('${r.id}')">Potvrdit ručně</button>
+        <button class="btn btn-sm btn-ghost" onclick="cancelReservation('${r.id}')">Zrušit</button>
+      </td></tr>`; }).join('')}
+  ` : `<tr><td style="padding:16px;color:#948e83;">Žádné nezaplacené rezervace 🎉</td></tr>`;
+
+  renderAdminTable();
+  renderSeriesAdmin();
+  await renderMembers();
+
+  const courtSel = document.getElementById('blockCourt');
+  courtSel.innerHTML = '';
+  Object.keys(venuesConfig).length && orderedVenueSlugs().forEach(slug=>{
+    const grp = document.createElement('optgroup'); grp.label = venuesConfig[slug].name;
+    venuesConfig[slug].courts.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; grp.appendChild(o); });
+    courtSel.appendChild(grp);
+  });
+  const fromSel = document.getElementById('blockFrom'); const toSel = document.getElementById('blockTo');
+  fromSel.innerHTML=''; toSel.innerHTML='';
+  const allStarts = slotStarts({dayStart:8, dayEnd:21, minDuration:1, slotStep:0.5});
+  allStarts.concat([21]).forEach(h=>{
+    fromSel.innerHTML += `<option value="${h}">${formatHour(h)}</option>`;
+    toSel.innerHTML += `<option value="${h}">${formatHour(h)}</option>`;
+  });
+}
+function renderAdminTable(){
+  const table = document.getElementById('allTable'); if(!table) return;
+  const search = (document.getElementById('allSearch')?.value || '').toLowerCase();
+  const filter = document.getElementById('allFilter')?.value || 'future';
+  const today = todayISO();
+  let list = adminReservationsCache.slice();
+  if(filter === 'future') list = list.filter(r => r.date >= today);
+  else if(filter === 'past') list = list.filter(r => r.date < today);
+  if(search) list = list.filter(r => (r.organizer_name||r.event_name||'').toLowerCase().includes(search));
+  list.sort((a,b)=>(a.date+a.start_hour)<(b.date+b.start_hour)?1:-1);
+  table.innerHTML = list.length ? `
+    <tr><th>Hřiště</th><th>Kurt</th><th>Datum</th><th>Čas</th><th>Typ</th><th>Kdo</th><th>Sleva</th><th>Stav</th><th>Vytvořil</th></tr>
+    ${list.map(r=>{
+      const court=findCourt(r.court_id);
+      const statusLabel = {pending_payment:'Čeká na platbu', paid_confirmed:'Zaplaceno', club_blocked:'Blokace/akce', cancelled_by_user:'Zrušeno (hráč)', cancelled_by_admin:'Zrušeno (admin)'}[r.status] || r.status;
+      return `<tr><td>${court.locationName}</td><td>${court.name}</td><td>${r.date}</td><td>${formatHour(r.start_hour)}–${formatHour(r.end_hour)}</td>
+        <td>${r.type==='club_event'?'Akce':'Rezervace'}</td><td>${r.organizer_name||r.event_name||'—'}</td>
+        <td>${r.discount_applied ?? '—'} %</td><td>${statusLabel}</td><td>${r.created_by || 'hráč (online)'}</td></tr>`;
+    }).join('')}
+  ` : `<tr><td style="padding:16px;color:#948e83;">Žádné rezervace pro tenhle filtr</td></tr>`;
+}
+async function adminConfirm(id){
+  const { error } = await sb.from('reservations').update({status:'paid_confirmed', paid_at:new Date().toISOString()}).eq('id', id);
+  if(error){ toast('Chyba: '+error.message); return; }
+  await sb.from('payments').update({status:'manually_confirmed', confirmed_by: session.user.email, paid_at:new Date().toISOString()}).eq('reservation_id', id);
+  toast('Rezervace ručně potvrzena');
+  await renderAll();
+}
+async function createBlock(){
+  const name = document.getElementById('blockName').value.trim();
+  const courtId = document.getElementById('blockCourt').value;
+  const court = findCourt(courtId);
+  const from = parseFloat(document.getElementById('blockFrom').value);
+  const to = parseFloat(document.getElementById('blockTo').value);
+  const asTournament = document.getElementById('blockAsTournament').checked;
+  if(!name || to<=from){ toast('Vyplň název a platný časový rozsah'); return; }
+
+  let eventId = null;
+  if(asTournament){
+    const toTime = h => String(Math.floor(h)).padStart(2,'0') + ':' + String(Math.round((h-Math.floor(h))*60)).padStart(2,'0') + ':00';
+    const { data: ev, error: evErr } = await sb.from('events').insert({
+      name, category: 'turnaj', date: selectedDate, time_from: toTime(from), time_to: toTime(to),
+      location: `${court.locationName} · ${court.name}`, status: 'otevreno', visibility: 'verejne',
+      organizer: session.user.email
+    }).select().single();
+    if(evErr){ toast('Chyba při zakládání v Kalendáři: '+evErr.message); }
+    else eventId = ev.id;
+  }
+
+  const { error } = await sb.from('reservations').insert({
+    club_id: CLUB_ID, venue_id: venuesConfig[court.locationSlug].id, court_id: courtId,
+    date: selectedDate, start_hour: from, duration_hours: to-from, end_hour: to,
+    type:'club_event', status:'club_blocked', event_name:name, created_by: session.user.email,
+    source_event_id: eventId
+  });
+  if(error){ toast('Chyba: '+error.message); return; }
+  document.getElementById('blockName').value='';
+  toast(asTournament && eventId ? `Turnaj „${name}" vytvořen — v Rezervacích i Kalendáři` : `Blokace „${name}" vytvořena`);
+  await renderAll();
+}
+
+/* ================= ADMIN: ČLENOVÉ (skutečná tabulka) ================= */
+let membersCache = [];
+async function renderMembers(){
+  const { data, error } = await sb.from('member_profiles').select('*').order('full_name');
+  if(error){ toast('Chyba: '+error.message); return; }
+  membersCache = data.map(m=>{
+    const mine = adminReservationsCache.filter(r=>r.member_id===m.user_id);
+    return { ...m, revenue: mine.filter(r=>r.status==='paid_confirmed').reduce((s,r)=>s+Number(r.amount_due||0),0), count: mine.length, reservations: mine };
+  });
+  paintMembersTable();
+}
+function paintMembersTable(){
+  const search = (document.getElementById('memberSearch')?.value || '').toLowerCase();
+  let members = membersCache.slice();
+  if(search) members = members.filter(m=>m.full_name.toLowerCase().includes(search));
+  members.sort((a,b)=> b.revenue - a.revenue);
+  const table = document.getElementById('membersTable'); if(!table) return;
+  const tierLabel = {none:'Nečlen', clen:'Člen', trener:'Trenér'};
+  table.innerHTML = members.length ? `
+    <tr><th>Zákazník</th><th>Tržba</th><th>Rezervace</th><th>Telefon</th><th>Úroveň</th><th>Role</th><th></th></tr>
+    ${members.map(m=>`<tr>
+      <td><b>${m.full_name}</b></td><td>${m.revenue} Kč</td><td>${m.count}</td><td>${m.phone||'—'}</td>
+      <td>${tierLabel[m.membership_tier] || 'Nečlen'} (${m.discount_percent} %)</td><td>${m.role}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="openMemberDetail('${m.user_id}')">Detail</button></td>
+    </tr>`).join('')}
+  ` : `<tr><td style="padding:16px;color:#948e83;">Žádní členové zatím neodpovídají hledání</td></tr>`;
+}
+function openMemberDetail(userId){
+  const m = membersCache.find(x=>x.user_id===userId); if(!m) return;
+  document.getElementById('memberDetailName').textContent = m.full_name;
+  const rows = m.reservations.slice().sort((a,b)=>(a.date+a.start_hour)<(b.date+b.start_hour)?1:-1).map(r=>{
+    const court = findCourt(r.court_id);
+    const statusLabel = {pending_payment:'Čeká na platbu', paid_confirmed:'Zaplaceno'}[r.status] || r.status;
+    return `<tr><td>${r.date}</td><td>${court.locationName} · ${court.name}</td><td>${formatHour(r.start_hour)}–${formatHour(r.end_hour)}</td><td>${r.amount_due} Kč</td><td>${statusLabel}</td></tr>`;
+  }).join('');
+  document.getElementById('memberDetailContent').innerHTML = `
+    <div class="price-box" style="margin-top:0;">
+      <div class="price-row"><span>Telefon</span><span>${m.phone||'—'}</span></div>
+      <div class="price-row"><span>Členská úroveň</span><span>
+        <select id="editTier" onchange="updateMemberTier('${m.user_id}', this.value)">
+          <option value="none" ${m.membership_tier==='none'?'selected':''}>Nečlen — 0 %</option>
+          <option value="clen" ${m.membership_tier==='clen'?'selected':''}>Člen — 20 % sleva</option>
+          <option value="trener" ${m.membership_tier==='trener'?'selected':''}>Trenér — 100 % (zdarma)</option>
+        </select>
+      </span></div>
+      <div class="price-row"><span>Role v appce</span><span>
+        <select id="editRole" onchange="updateMemberRole('${m.user_id}', this.value)">
+          ${['member','admin','owner'].map(r=>`<option value="${r}" ${r===m.role?'selected':''}>${r}</option>`).join('')}
+        </select>
+      </span></div>
+    </div>
+    <p style="font-size:12px;color:#767066;margin:-8px 0 14px;">Role v appce = kdo vidí Admin sekci. Členská úroveň = kdo má jakou slevu na rezervace. Dvě různé věci, nastavují se zvlášť.</p>
+    <div class="admin-grid" style="margin-bottom:14px;">
+      <div class="stat-card"><div class="num">${m.revenue} Kč</div><div class="lbl">Tržba celkem</div></div>
+      <div class="stat-card"><div class="num">${m.count}</div><div class="lbl">Počet rezervací</div></div>
+    </div>
+    <div class="section-title" style="margin-top:0;">Objednávky</div>
+    <table class="admin-table"><tr><th>Datum</th><th>Kurt</th><th>Čas</th><th>Částka</th><th>Stav</th></tr>${rows || '<tr><td style="padding:12px;color:#948e83;">Žádné objednávky</td></tr>'}</table>
+  `;
+  showModal('memberDetailOverlay');
+}
+async function updateMemberTier(userId, tier){
+  const discount = {none:0, clen:20, trener:100}[tier];
+  const { error } = await sb.from('member_profiles').update({membership_tier: tier, discount_percent: discount}).eq('user_id', userId);
+  if(error){ toast('Chyba: '+error.message); return; }
+  toast('Členská úroveň upravena'); await renderMembers();
+}
+async function updateMemberRole(userId, value){
+  const { error } = await sb.from('member_profiles').update({role: value}).eq('user_id', userId);
+  if(error){ toast('Chyba: '+error.message); return; }
+  toast('Role upravena'); await renderMembers(); renderHeader();
+}
+
+function renderSeriesAdmin(){
+  const table = document.getElementById('seriesTable'); if(!table) return;
+  const active = adminReservationsCache.filter(r=>r.series_id && !['cancelled_by_user','cancelled_by_admin'].includes(r.status));
+  const groups = {};
+  active.forEach(r=>{
+    if(!groups[r.series_id]) groups[r.series_id] = { name: r.series_name, courtId: r.court_id, items: [] };
+    groups[r.series_id].items.push(r);
+  });
+  const list = Object.keys(groups).map(id=>({id, ...groups[id]}));
+  table.innerHTML = list.length ? `
+    <tr><th>Název série</th><th>Hřiště / kurt</th><th>Termínů</th><th>Od–do</th><th>Organizátor</th><th></th></tr>
+    ${list.map(g=>{
+      const court = findCourt(g.courtId);
+      const dates = g.items.map(i=>i.date).sort();
+      return `<tr>
+        <td><b>${g.name}</b></td><td>${court.locationName} · ${court.name}</td><td>${g.items.length}</td>
+        <td>${dates[0]} – ${dates[dates.length-1]}</td><td>${g.items[0].organizer_name}</td>
+        <td><button class="btn btn-sm btn-ghost" onclick="cancelSeries('${g.id}')">Zrušit celou sérii</button></td>
+      </tr>`;
+    }).join('')}
+  ` : `<tr><td style="padding:16px;color:#948e83;">Zatím žádné aktivní série</td></tr>`;
+}
+async function cancelSeries(seriesId){
+  const status = isAdmin() ? 'cancelled_by_admin' : 'cancelled_by_user';
+  const { error } = await sb.from('reservations').update({status}).eq('series_id', seriesId).not('status','in','(cancelled_by_user,cancelled_by_admin)');
+  if(error){ toast('Chyba: '+error.message); return; }
+  toast('Celá série zrušena');
+  await renderAll();
+}
+
+/* ================= HELPERS ================= */
+function emptyState(title, sub){ return `<div class="empty-state"><div class="em-title">${title}</div>${sub}</div>`; }
+
+/* ================= NAV DATUM ================= */
+document.getElementById('prevDay').onclick = ()=>{ shiftDate(-1); };
+document.getElementById('nextDay').onclick = ()=>{ shiftDate(1); };
+document.getElementById('todayBtn').onclick = ()=>{ selectedDate = todayISO(); renderGrid(); };
+function shiftDate(delta){
+  const d = new Date(selectedDate+'T00:00:00'); d.setDate(d.getDate()+delta);
+  selectedDate = d.toISOString().slice(0,10); renderGrid();
+}
+
+/* ================= RENDER ALL / INIT ================= */
+async function renderAll(){
+  renderHeader();
+  if(currentLocationId) await renderGrid();
+  const activeTab = document.querySelector('#tabs button.active')?.dataset.view;
+  if(activeTab==='mine') await renderMine();
+  if(activeTab==='openmatches') await renderOpen();
+  if(activeTab==='calendar') await renderCalendar();
+  if(activeTab==='admin' && isAdmin()) await renderAdmin();
+}
+
+(async function init(){
+  await loadVenues();
+  renderProductSelector();
+
+  const urlVenue = new URLSearchParams(window.location.search).get('venue');
+  if(urlVenue && venuesConfig[urlVenue]){ await selectProduct(urlVenue); }
+
+  const urlTab = new URLSearchParams(window.location.search).get('tab');
+  if(urlTab && document.getElementById('view-'+urlTab)){
+    document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view===urlTab));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+urlTab).classList.add('active');
+  }
+
+  const { data: { session: s } } = await sb.auth.getSession();
+  session = s;
+  if(session) await loadProfile();
+  sb.auth.onAuthStateChange(async (event, s2)=>{
+    session = s2;
+    if(session){ await loadProfile(); } else { profile = null; }
+    closeModal('loginOverlay');
+    renderHeader(); await renderAll();
+  });
+  renderHeader();
+  await renderAll();
+})();
+</script>
 </body>
 </html>

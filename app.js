@@ -146,13 +146,13 @@
     </div>`;
   }
 
-  function isExternalOpenMatch(e) { return e._source === "chybi-nam-hrac"; }
+  function isExternalOpenMatch(e) { return e._source === "core-openmatch"; }
 
   function interestButtonState(e) {
     if (isExternalOpenMatch(e)) {
       const cfg = window.APP_CONFIG || {};
       if (e.status === "plno") return { disabled: true, label: "Obsazeno", external: true };
-      return { disabled: false, label: "Chci hrát", external: true, href: cfg.CHYBI_NAM_HRAC_URL || "#" };
+      return { disabled: false, label: "Chci hrát", external: true, href: (cfg.CORE_APP_URL || "#") + "?tab=openmatches" };
     }
     if (e.status === "plno") return { disabled: true, label: "Obsazeno" };
     if (e.status === "zruseno") return { disabled: true, label: "Zrušeno" };
@@ -374,8 +374,8 @@
   function renderQuickLinks() {
     const cfg = window.APP_CONFIG || {};
     const links = [
+      { url: cfg.CORE_APP_URL, label: "🎾 Rezervace kurtů" },
       { url: cfg.BAR_APP_URL, label: "🍺 Klubový bar" },
-      { url: cfg.CHYBI_NAM_HRAC_URL, label: "🏓 Chybí nám hráč" },
       { url: cfg.ZDRAVY_HRAC_APP_URL, label: "❤️ Zdravý hráč" },
     ].filter((l) => l.url);
     if (links.length === 0) {
